@@ -1,0 +1,5232 @@
+StdRandom.java
+package edu.princeton.cs.algs4;
+
+import java.util.Random;
+
+public final class StdRandom {
+
+    private static Random random;    // pseudo-random number generator
+    private static long seed;        // pseudo-random number generator seed
+
+    // static initializer
+    static {
+        // this is how the seed was set in Java 1.4
+        seed = System.currentTimeMillis();
+        random = new Random(seed);
+    }
+
+    // don't instantiate
+    private StdRandom() { }
+
+    /**
+     * Sets the seed of the pseudo-random number generator.
+     * This method enables you to produce the same sequence of "random"
+     * number for each execution of the program.
+     * Ordinarily, you should call this method at most once per program.
+     *
+     * @param s the seed
+     */
+    public static void setSeed(long s) {
+        seed   = s;
+        random = new Random(seed);
+    }
+
+    /**
+     * Returns the seed of the pseudo-random number generator.
+     *
+     * @return the seed
+     */
+    public static long getSeed() {
+        return seed;
+    }
+
+    /**
+     * Returns a random real number uniformly in [0, 1).
+     *
+     * @return a random real number uniformly in [0, 1)
+     */
+    public static double uniform() {
+        return random.nextDouble();
+    }
+
+    /**
+     * Returns a random integer uniformly in [0, n).
+     * 
+     * @param n number of possible integers
+     * @return a random integer uniformly between 0 (inclusive) and {@code n} (exclusive)
+     * @throws IllegalArgumentException if {@code n <= 0}
+     */
+    public static int uniform(int n) {
+        if (n <= 0) throw new IllegalArgumentException("argument must be positive: " + n);
+        return random.nextInt(n);
+    }
+
+
+    /**
+     * Returns a random long integer uniformly in [0, n).
+     * 
+     * @param n number of possible {@code long} integers
+     * @return a random long integer uniformly between 0 (inclusive) and {@code n} (exclusive)
+     * @throws IllegalArgumentException if {@code n <= 0}
+     */
+    public static long uniform(long n) {
+        if (n <= 0L) throw new IllegalArgumentException("argument must be positive: " + n);
+
+        // https://docs.oracle.com/javase/8/docs/api/java/util/Random.html#longs-long-long-long-
+        long r = random.nextLong();
+        long m = n - 1;
+
+        // power of two
+        if ((n & m) == 0L) {
+            return r & m;
+        }
+
+        // reject over-represented candidates
+        long u = r >>> 1;
+        while (u + m - (r = u % n) < 0L) {
+            u = random.nextLong() >>> 1;
+        }
+        return r;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    //  STATIC METHODS BELOW RELY ON JAVA.UTIL.RANDOM ONLY INDIRECTLY VIA
+    //  THE STATIC METHODS ABOVE.
+    ///////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Returns a random real number uniformly in [0, 1).
+     * 
+     * @return     a random real number uniformly in [0, 1)
+     * @deprecated Replaced by {@link #uniform()}.
+     */
+    @Deprecated
+    public static double random() {
+        return uniform();
+    }
+
+    /**
+     * Returns a random integer uniformly in [a, b).
+     * 
+     * @param  a the left endpoint
+     * @param  b the right endpoint
+     * @return a random integer uniformly in [a, b)
+     * @throws IllegalArgumentException if {@code b <= a}
+     * @throws IllegalArgumentException if {@code b - a >= Integer.MAX_VALUE}
+     */
+    public static int uniform(int a, int b) {
+        if ((b <= a) || ((long) b - a >= Integer.MAX_VALUE)) {
+            throw new IllegalArgumentException("invalid range: [" + a + ", " + b + ")");
+        }
+        return a + uniform(b - a);
+    }
+
+    /**
+     * Returns a random real number uniformly in [a, b).
+     * 
+     * @param  a the left endpoint
+     * @param  b the right endpoint
+     * @return a random real number uniformly in [a, b)
+     * @throws IllegalArgumentException unless {@code a < b}
+     */
+    public static double uniform(double a, double b) {
+        if (!(a < b)) {
+            throw new IllegalArgumentException("invalid range: [" + a + ", " + b + ")");
+        }
+        return a + uniform() * (b-a);
+    }
+
+    /**
+     * Returns a random boolean from a Bernoulli distribution with success
+     * probability <em>p</em>.
+     *
+     * @param  p the probability of returning {@code true}
+     * @return {@code true} with probability {@code p} and
+     *         {@code false} with probability {@code 1 - p}
+     * @throws IllegalArgumentException unless {@code 0} &le; {@code p} &le; {@code 1.0}
+     */
+    public static boolean bernoulli(double p) {
+        if (!(p >= 0.0 && p <= 1.0))
+            throw new IllegalArgumentException("probability p must be between 0.0 and 1.0: " + p);
+        return uniform() < p;
+    }
+
+    /**
+     * Returns a random boolean from a Bernoulli distribution with success
+     * probability 1/2.
+     * 
+     * @return {@code true} with probability 1/2 and
+     *         {@code false} with probability 1/2
+     */
+    public static boolean bernoulli() {
+        return bernoulli(0.5);
+    }
+
+    /**
+     * Returns a random real number from a standard Gaussian distribution.
+     * 
+     * @return a random real number from a standard Gaussian distribution
+     *         (mean 0 and standard deviation 1).
+     */
+    public static double gaussian() {
+        // use the polar form of the Box-Muller transform
+        double r, x, y;
+        do {
+            x = uniform(-1.0, 1.0);
+            y = uniform(-1.0, 1.0);
+            r = x*x + y*y;
+        } while (r >= 1 || r == 0);
+        return x * Math.sqrt(-2 * Math.log(r) / r);
+
+        // Remark:  y * Math.sqrt(-2 * Math.log(r) / r)
+        // is an independent random gaussian
+    }
+
+    /**
+     * Returns a random real number from a Gaussian distribution with mean &mu;
+     * and standard deviation &sigma;.
+     * 
+     * @param  mu the mean
+     * @param  sigma the standard deviation
+     * @return a real number distributed according to the Gaussian distribution
+     *         with mean {@code mu} and standard deviation {@code sigma}
+     */
+    public static double gaussian(double mu, double sigma) {
+        return mu + sigma * gaussian();
+    }
+
+    /**
+     * Returns a random integer from a geometric distribution with success
+     * probability <em>p</em>.
+     * The integer represents the number of independent trials
+     * before the first success.
+     * 
+     * @param  p the parameter of the geometric distribution
+     * @return a random integer from a geometric distribution with success
+     *         probability {@code p}; or {@code Integer.MAX_VALUE} if
+     *         {@code p} is (nearly) equal to {@code 1.0}.
+     * @throws IllegalArgumentException unless {@code p >= 0.0} and {@code p <= 1.0}
+     */
+    public static int geometric(double p) {
+        if (!(p >= 0)) {
+            throw new IllegalArgumentException("probability p must be greater than 0: " + p);
+        }
+        if (!(p <= 1.0)) {
+            throw new IllegalArgumentException("probability p must not be larger than 1: " + p);
+        }
+        // using algorithm given by Knuth
+        return (int) Math.ceil(Math.log(uniform()) / Math.log(1.0 - p));
+    }
+
+    /**
+     * Returns a random integer from a Poisson distribution with mean &lambda;.
+     *
+     * @param  lambda the mean of the Poisson distribution
+     * @return a random integer from a Poisson distribution with mean {@code lambda}
+     * @throws IllegalArgumentException unless {@code lambda > 0.0} and not infinite
+     */
+    public static int poisson(double lambda) {
+        if (!(lambda > 0.0))
+            throw new IllegalArgumentException("lambda must be positive: " + lambda);
+        if (Double.isInfinite(lambda))
+            throw new IllegalArgumentException("lambda must not be infinite: " + lambda);
+        // using algorithm given by Knuth
+        // see http://en.wikipedia.org/wiki/Poisson_distribution
+        int k = 0;
+        double p = 1.0;
+        double expLambda = Math.exp(-lambda);
+        do {
+            k++;
+            p *= uniform();
+        } while (p >= expLambda);
+        return k-1;
+    }
+
+    /**
+     * Returns a random real number from the standard Pareto distribution.
+     *
+     * @return a random real number from the standard Pareto distribution
+     */
+    public static double pareto() {
+        return pareto(1.0);
+    }
+
+    /**
+     * Returns a random real number from a Pareto distribution with
+     * shape parameter &alpha;.
+     *
+     * @param  alpha shape parameter
+     * @return a random real number from a Pareto distribution with shape
+     *         parameter {@code alpha}
+     * @throws IllegalArgumentException unless {@code alpha > 0.0}
+     */
+    public static double pareto(double alpha) {
+        if (!(alpha > 0.0))
+            throw new IllegalArgumentException("alpha must be positive: " + alpha);
+        return Math.pow(1 - uniform(), -1.0/alpha) - 1.0;
+    }
+
+    /**
+     * Returns a random real number from the Cauchy distribution.
+     *
+     * @return a random real number from the Cauchy distribution.
+     */
+    public static double cauchy() {
+        return Math.tan(Math.PI * (uniform() - 0.5));
+    }
+
+    /**
+     * Returns a random integer from the specified discrete distribution.
+     *
+     * @param  probabilities the probability of occurrence of each integer
+     * @return a random integer from a discrete distribution:
+     *         {@code i} with probability {@code probabilities[i]}
+     * @throws IllegalArgumentException if {@code probabilities} is {@code null}
+     * @throws IllegalArgumentException if sum of array entries is not (very nearly) equal to {@code 1.0}
+     * @throws IllegalArgumentException unless {@code probabilities[i] >= 0.0} for each index {@code i}
+     */
+    public static int discrete(double[] probabilities) {
+        if (probabilities == null) throw new IllegalArgumentException("argument array must not be null");
+        double EPSILON = 1.0E-14;
+        double sum = 0.0;
+        for (int i = 0; i < probabilities.length; i++) {
+            if (!(probabilities[i] >= 0.0))
+                throw new IllegalArgumentException("array entry " + i + " must be non-negative: " + probabilities[i]);
+            sum += probabilities[i];
+        }
+        if (sum > 1.0 + EPSILON || sum < 1.0 - EPSILON)
+            throw new IllegalArgumentException("sum of array entries does not approximately equal 1.0: " + sum);
+
+        // the for loop may not return a value when both r is (nearly) 1.0 and when the
+        // cumulative sum is less than 1.0 (as a result of floating-point roundoff error)
+        while (true) {
+            double r = uniform();
+            sum = 0.0;
+            for (int i = 0; i < probabilities.length; i++) {
+                sum = sum + probabilities[i];
+                if (sum > r) return i;
+            }
+        }
+    }
+
+    /**
+     * Returns a random integer from the specified discrete distribution.
+     *
+     * @param  frequencies the frequency of occurrence of each integer
+     * @return a random integer from a discrete distribution:
+     *         {@code i} with probability proportional to {@code frequencies[i]}
+     * @throws IllegalArgumentException if {@code frequencies} is {@code null}
+     * @throws IllegalArgumentException if all array entries are {@code 0}
+     * @throws IllegalArgumentException if {@code frequencies[i]} is negative for any index {@code i}
+     * @throws IllegalArgumentException if sum of frequencies exceeds {@code Integer.MAX_VALUE} (2<sup>31</sup> - 1)
+     */
+    public static int discrete(int[] frequencies) {
+        if (frequencies == null) throw new IllegalArgumentException("argument array must not be null");
+        long sum = 0;
+        for (int i = 0; i < frequencies.length; i++) {
+            if (frequencies[i] < 0)
+                throw new IllegalArgumentException("array entry " + i + " must be non-negative: " + frequencies[i]);
+            sum += frequencies[i];
+        }
+        if (sum == 0)
+            throw new IllegalArgumentException("at least one array entry must be positive");
+        if (sum >= Integer.MAX_VALUE)
+            throw new IllegalArgumentException("sum of frequencies overflows an int");
+
+        // pick index i with probabilitity proportional to frequency
+        double r = uniform((int) sum);
+        sum = 0;
+        for (int i = 0; i < frequencies.length; i++) {
+            sum += frequencies[i];
+            if (sum > r) return i;
+        }
+
+        // can't reach here
+        assert false;
+        return -1;
+    }
+
+    /**
+     * Returns a random real number from an exponential distribution
+     * with rate &lambda;.
+     * 
+     * @param  lambda the rate of the exponential distribution
+     * @return a random real number from an exponential distribution with
+     *         rate {@code lambda}
+     * @throws IllegalArgumentException unless {@code lambda > 0.0}
+     */
+    public static double exp(double lambda) {
+        if (!(lambda > 0.0))
+            throw new IllegalArgumentException("lambda must be positive: " + lambda);
+        return -Math.log(1 - uniform()) / lambda;
+    }
+
+    /**
+     * Rearranges the elements of the specified array in uniformly random order.
+     *
+     * @param  a the array to shuffle
+     * @throws IllegalArgumentException if {@code a} is {@code null}
+     */
+    public static void shuffle(Object[] a) {
+        validateNotNull(a);
+        int n = a.length;
+        for (int i = 0; i < n; i++) {
+            int r = i + uniform(n-i);     // between i and n-1
+            Object temp = a[i];
+            a[i] = a[r];
+            a[r] = temp;
+        }
+    }
+
+    /**
+     * Rearranges the elements of the specified array in uniformly random order.
+     *
+     * @param  a the array to shuffle
+     * @throws IllegalArgumentException if {@code a} is {@code null}
+     */
+    public static void shuffle(double[] a) {
+        validateNotNull(a);
+        int n = a.length;
+        for (int i = 0; i < n; i++) {
+            int r = i + uniform(n-i);     // between i and n-1
+            double temp = a[i];
+            a[i] = a[r];
+            a[r] = temp;
+        }
+    }
+
+    /**
+     * Rearranges the elements of the specified array in uniformly random order.
+     *
+     * @param  a the array to shuffle
+     * @throws IllegalArgumentException if {@code a} is {@code null}
+     */
+    public static void shuffle(int[] a) {
+        validateNotNull(a);
+        int n = a.length;
+        for (int i = 0; i < n; i++) {
+            int r = i + uniform(n-i);     // between i and n-1
+            int temp = a[i];
+            a[i] = a[r];
+            a[r] = temp;
+        }
+    }
+
+    /**
+     * Rearranges the elements of the specified array in uniformly random order.
+     *
+     * @param  a the array to shuffle
+     * @throws IllegalArgumentException if {@code a} is {@code null}
+     */
+    public static void shuffle(char[] a) {
+        validateNotNull(a);
+        int n = a.length;
+        for (int i = 0; i < n; i++) {
+            int r = i + uniform(n-i);     // between i and n-1
+            char temp = a[i];
+            a[i] = a[r];
+            a[r] = temp;
+        }
+    }
+
+    /**
+     * Rearranges the elements of the specified subarray in uniformly random order.
+     *
+     * @param  a the array to shuffle
+     * @param  lo the left endpoint (inclusive)
+     * @param  hi the right endpoint (exclusive)
+     * @throws IllegalArgumentException if {@code a} is {@code null}
+     * @throws IllegalArgumentException unless {@code (0 <= lo) && (lo < hi) && (hi <= a.length)}
+     * 
+     */
+    public static void shuffle(Object[] a, int lo, int hi) {
+        validateNotNull(a);
+        validateSubarrayIndices(lo, hi, a.length);
+
+        for (int i = lo; i < hi; i++) {
+            int r = i + uniform(hi-i);     // between i and hi-1
+            Object temp = a[i];
+            a[i] = a[r];
+            a[r] = temp;
+        }
+    }
+
+    /**
+     * Rearranges the elements of the specified subarray in uniformly random order.
+     *
+     * @param  a the array to shuffle
+     * @param  lo the left endpoint (inclusive)
+     * @param  hi the right endpoint (exclusive)
+     * @throws IllegalArgumentException if {@code a} is {@code null}
+     * @throws IllegalArgumentException unless {@code (0 <= lo) && (lo < hi) && (hi <= a.length)}
+     */
+    public static void shuffle(double[] a, int lo, int hi) {
+        validateNotNull(a);
+        validateSubarrayIndices(lo, hi, a.length);
+
+        for (int i = lo; i < hi; i++) {
+            int r = i + uniform(hi-i);     // between i and hi-1
+            double temp = a[i];
+            a[i] = a[r];
+            a[r] = temp;
+        }
+    }
+
+    /**
+     * Rearranges the elements of the specified subarray in uniformly random order.
+     *
+     * @param  a the array to shuffle
+     * @param  lo the left endpoint (inclusive)
+     * @param  hi the right endpoint (exclusive)
+     * @throws IllegalArgumentException if {@code a} is {@code null}
+     * @throws IllegalArgumentException unless {@code (0 <= lo) && (lo < hi) && (hi <= a.length)}
+     */
+    public static void shuffle(int[] a, int lo, int hi) {
+        validateNotNull(a);
+        validateSubarrayIndices(lo, hi, a.length);
+
+        for (int i = lo; i < hi; i++) {
+            int r = i + uniform(hi-i);     // between i and hi-1
+            int temp = a[i];
+            a[i] = a[r];
+            a[r] = temp;
+        }
+    }
+
+    /**
+     * Returns a uniformly random permutation of <em>n</em> elements.
+     *
+     * @param  n number of elements
+     * @throws IllegalArgumentException if {@code n} is negative
+     * @return an array of length {@code n} that is a uniformly random permutation
+     *         of {@code 0}, {@code 1}, ..., {@code n-1}
+     */
+    public static int[] permutation(int n) {
+        if (n < 0) throw new IllegalArgumentException("n must be non-negative: " + n);
+        int[] perm = new int[n];
+        for (int i = 0; i < n; i++)
+            perm[i] = i;
+        shuffle(perm);
+        return perm;
+    }
+
+    /**
+     * Returns a uniformly random permutation of <em>k</em> of <em>n</em> elements.
+     *
+     * @param  n number of elements
+     * @param  k number of elements to select
+     * @throws IllegalArgumentException if {@code n} is negative
+     * @throws IllegalArgumentException unless {@code 0 <= k <= n}
+     * @return an array of length {@code k} that is a uniformly random permutation
+     *         of {@code k} of the elements from {@code 0}, {@code 1}, ..., {@code n-1}
+     */
+    public static int[] permutation(int n, int k) {
+        if (n < 0) throw new IllegalArgumentException("n must be non-negative: " + n);
+        if (k < 0 || k > n) throw new IllegalArgumentException("k must be between 0 and n: " + k);
+        int[] perm = new int[k];
+        for (int i = 0; i < k; i++) {
+            int r = uniform(i+1);    // between 0 and i
+            perm[i] = perm[r];
+            perm[r] = i;
+        }
+        for (int i = k; i < n; i++) {
+            int r = uniform(i+1);    // between 0 and i
+            if (r < k) perm[r] = i;
+        }
+        return perm;
+    }
+
+    // throw an IllegalArgumentException if x is null
+    // (x can be of type Object[], double[], int[], ...)
+    private static void validateNotNull(Object x) {
+        if (x == null) {
+            throw new IllegalArgumentException("argument must not be null");
+        }
+    }
+
+    // throw an exception unless 0 <= lo <= hi <= length
+    private static void validateSubarrayIndices(int lo, int hi, int length) {
+        if (lo < 0 || hi > length || lo > hi) {
+            throw new IllegalArgumentException("subarray indices out of bounds: [" + lo + ", " + hi + ")");
+        }
+    }
+
+    /**
+     * Unit tests the methods in this class.
+     *
+     * @param args the command-line arguments
+     */
+    public static void main(String[] args) {
+        int n = Integer.parseInt(args[0]);
+        if (args.length == 2) StdRandom.setSeed(Long.parseLong(args[1]));
+        double[] probabilities = { 0.5, 0.3, 0.1, 0.1 };
+        int[] frequencies = { 5, 3, 1, 1 };
+        String[] a = "A B C D E F G".split(" ");
+
+        StdOut.println("seed = " + StdRandom.getSeed());
+        for (int i = 0; i < n; i++) {
+            StdOut.printf("%2d ",   uniform(100));
+            StdOut.printf("%8.5f ", uniform(10.0, 99.0));
+            StdOut.printf("%5b ",   bernoulli(0.5));
+            StdOut.printf("%7.5f ", gaussian(9.0, 0.2));
+            StdOut.printf("%1d ",   discrete(probabilities));
+            StdOut.printf("%1d ",   discrete(frequencies));
+            StdOut.printf("%11d ",  uniform(100000000000L));
+            StdRandom.shuffle(a);
+            for (String s : a)
+                StdOut.print(s);
+            StdOut.println();
+        }
+    }
+
+}
+
+RandomSeq.java
+package edu.princeton.cs.algs4;
+
+public class RandomSeq { 
+
+    // this class should not be instantiated
+    private RandomSeq() { }
+
+
+    /**
+     * Reads in two command-line arguments lo and hi and prints n uniformly
+     * random real numbers in [lo, hi) to standard output.
+     *
+     * @param args the command-line arguments
+     */
+    public static void main(String[] args) {
+
+        // command-line arguments
+        int n = Integer.parseInt(args[0]);
+
+        // for backward compatibility with Intro to Programming in Java version of RandomSeq
+        if (args.length == 1) {
+            // generate and print n numbers between 0.0 and 1.0
+            for (int i = 0; i < n; i++) {
+                double x = StdRandom.uniform();
+                StdOut.println(x);
+            }
+        }
+        else if (args.length == 3) {
+            double lo = Double.parseDouble(args[1]);
+            double hi = Double.parseDouble(args[2]);
+
+            // generate and print n numbers between lo and hi
+            for (int i = 0; i < n; i++) {
+                double x = StdRandom.uniform(lo, hi);
+                StdOut.printf("%.2f\n", x);
+            }
+        }
+        else {
+            throw new IllegalArgumentException("Invalid number of arguments");
+        }
+    }
+
+}
+
+Average.java
+package edu.princeton.cs.algs4;
+
+public class Average { 
+
+    // this class should not be instantiated
+    private Average() { }
+
+    /**
+     * Reads in a sequence of real numbers from standard input and prints
+     * out their average to standard output.
+     *
+     * @param args the command-line arguments
+     */
+    public static void main(String[] args) { 
+        int count = 0;       // number input values
+        double sum = 0.0;    // sum of input values
+
+        // read data and compute statistics
+        while (!StdIn.isEmpty()) {
+            double value = StdIn.readDouble();
+            sum += value;
+            count++;
+        }
+
+        // compute the average
+        double average = sum / count;
+
+        // print results
+        StdOut.println("Average is " + average);
+    }
+
+}
+
+Cat.java
+package edu.princeton.cs.algs4;
+
+public class Cat { 
+
+    // this class should not be instantiated
+    private Cat() { }
+
+    /**
+     * Reads in a sequence of text files specified as the first command-line
+     * arguments, concatenates them, and writes the results to the file
+     * specified as the last command-line argument.
+     *
+     * @param args the command-line arguments
+     */
+    public static void main(String[] args) { 
+        Out out = new Out(args[args.length - 1]);
+        for (int i = 0; i < args.length - 1; i++) {
+            In in = new In(args[i]);
+            String s = in.readAll();
+            out.println(s);
+            in.close();
+        }
+        out.close();
+    }
+
+}
+
+Knuth.java
+package edu.princeton.cs.algs4;
+
+public class Knuth { 
+
+    // this class should not be instantiated
+    private Knuth() { }
+
+    /**
+     * Rearranges an array of objects in uniformly random order
+     * (under the assumption that {@code Math.random()} generates independent
+     * and uniformly distributed numbers between 0 and 1).
+     * @param a the array to be shuffled
+     */
+    public static void shuffle(Object[] a) {
+        int n = a.length;
+        for (int i = 0; i < n; i++) {
+            // choose index uniformly in [0, i]
+            int r = (int) (Math.random() * (i + 1));
+            Object swap = a[r];
+            a[r] = a[i];
+            a[i] = swap;
+        }
+    }
+
+    /**
+     * Rearranges an array of objects in uniformly random order
+     * (under the assumption that {@code Math.random()} generates independent
+     * and uniformly distributed numbers between 0 and 1).
+     * @param a the array to be shuffled
+     */
+    public static void shuffleAlternate(Object[] a) {
+        int n = a.length;
+        for (int i = 0; i < n; i++) {
+            // choose index uniformly in [i, n-1]
+            int r = i + (int) (Math.random() * (n - i));
+            Object swap = a[r];
+            a[r] = a[i];
+            a[i] = swap;
+        }
+    }
+
+    /**
+     * Reads in a sequence of strings from standard input, shuffles
+     * them, and prints out the results.
+     *
+     * @param args the command-line arguments
+     */
+    public static void main(String[] args) {
+
+        // read in the data
+        String[] a = StdIn.readAllStrings();
+
+        // shuffle the array
+        Knuth.shuffle(a);
+
+        // print results.
+        for (int i = 0; i < a.length; i++)
+            StdOut.println(a[i]);
+    }
+
+}
+
+Counter.java
+package edu.princeton.cs.algs4;
+
+/**
+ *  The {@code Counter} class is a mutable data type to encapsulate a counter.
+ *  <p>
+ *  For additional documentation,
+ *  see <a href="https://algs4.cs.princeton.edu/12oop">Section 1.2</a> of
+ *  <i>Algorithms, 4th Edition</i> by Robert Sedgewick and Kevin Wayne.
+ *
+ *  @author Robert Sedgewick
+ *  @author Kevin Wayne
+ */
+public class Counter implements Comparable<Counter> {
+
+    private final String name;     // counter name
+    private int count = 0;         // current value
+
+    /**
+     * Initializes a new counter starting at 0, with the given id.
+     *
+     * @param id the name of the counter
+     */
+    public Counter(String id) {
+        name = id;
+    } 
+
+    /**
+     * Increments the counter by 1.
+     */
+    public void increment() {
+        count++;
+    } 
+
+    /**
+     * Returns the current value of this counter.
+     *
+     * @return the current value of this counter
+     */
+    public int tally() {
+        return count;
+    } 
+
+    /**
+     * Returns a string representation of this counter.
+     *
+     * @return a string representation of this counter
+     */
+    public String toString() {
+        return count + " " + name;
+    } 
+
+    /**
+     * Compares this counter to the specified counter.
+     *
+     * @param  that the other counter
+     * @return {@code 0} if the value of this counter equals
+     *         the value of that counter; a negative integer if
+     *         the value of this counter is less than the value of
+     *         that counter; and a positive integer if the value
+     *         of this counter is greater than the value of that
+     *         counter
+     */
+    @Override
+    public int compareTo(Counter that) {
+        if      (this.count < that.count) return -1;
+        else if (this.count > that.count) return +1;
+        else                              return  0;
+    }
+
+
+    /**
+     * Reads two command-line integers n and trials; creates n counters;
+     * increments trials counters at random; and prints results.
+     *
+     * @param args the command-line arguments
+     */
+    public static void main(String[] args) { 
+        int n = Integer.parseInt(args[0]);
+        int trials = Integer.parseInt(args[1]);
+
+        // create n counters
+        Counter[] hits = new Counter[n];
+        for (int i = 0; i < n; i++) {
+            hits[i] = new Counter("counter" + i);
+        }
+
+        // increment trials counters at random
+        for (int t = 0; t < trials; t++) {
+            hits[StdRandom.uniform(n)].increment();
+        }
+
+        // print results
+        for (int i = 0; i < n; i++) {
+            StdOut.println(hits[i]);
+        }
+    }
+
+}
+
+
+list.c
+#include <stdio.h>
+#include <stdlib.h>
+
+#ifndef NULL
+#define NULL ((void*) 0)
+#endif
+
+typedef struct list_link {struct list_link *prev;struct list_link *next;} list_link_t;
+typedef struct list_node {void *data;list_link_t link;} list_node_t;
+typedef struct {int count;list_link_t head;} list_t;
+
+void list_link_init(list_link_t *link){link->prev = link;link->next = link;}
+void list_link_add(list_link_t *link, list_link_t *prev, list_link_t *next)
+{link->next = next;link->prev = prev;next->prev = link;prev->next = link;}
+void list_link_del(list_link_t *link, list_link_t *prev, list_link_t *next)
+{prev->next = next;next->prev = prev;list_link_init(link);}
+
+void list_node_init(list_node_t *node) {list_link_init(&(node->link));node->data = NULL;return ;}
+void list_init(list_t *list) {list_link_init(&(list->head));list->count = 0;return ;}
+void list_rpush(list_t *list, list_node_t *node) 
+{
+  if (list->count > 0) {list_link_add(&(node->link),list->head.prev,&(list->head));} 
+  else {list_link_add(&(node->link),&(list->head),&(list->head));}
+  list->count++;
+  return ;
+}
+void list_lpush(list_t *list, list_node_t *node) 
+{
+  if (list->count > 0) {list_link_add(&(node->link),&(list->head),list->head.next);} 
+  else {list_link_add(&(node->link),&(list->head),&(list->head));}
+  list->count++;
+  return ;
+}
+list_node_t * list_rpop(list_t *list) 
+{
+  list_node_t *node;list_link_t *link;
+  if (list->count <= 0) {return NULL;}
+  link = list->head.prev;
+  node = ((list_node_t *)((unsigned char *)(link) - (int)(&(((list_node_t *)0)->link))));
+  if (list->count > 1) {list_link_del(link, link->prev, &(list->head));} 
+  else {list_link_del(link, &(list->head), &(list->head));}
+  list->count--;
+  return node;
+}
+list_node_t * list_lpop(list_t *list) 
+{
+  list_node_t *node;list_link_t *link;
+  if (list->count <= 0) {return NULL;}
+  link = list->head.next;
+  node = ((list_node_t *)((unsigned char *)(link) - (int)(&(((list_node_t *)0)->link))));
+  if (list->count > 1){list_link_del(link, &(list->head), link->next);} 
+  else{list_link_del(link, &(list->head), &(list->head));}
+  list->count--;
+  return node;
+}
+void list_pop(list_t *list, list_node_t *node) 
+{
+  list_link_t *link;
+  link = &(node->link);
+  list_link_del(link, link->prev, link->next);
+  list->count--;
+  return ;
+}
+list_node_t * list_lget(list_t *list, int index) 
+{
+  list_node_t *node;list_link_t *link;node = NULL;
+  if (list->count <= 0) {return NULL;}
+  if (index < 0 || index >= list->count) {return NULL;}
+  if (index < list->count) 
+  {
+    link = list->head.next;
+    while (index > 0) {link = link->next;index--;}
+    node = ((list_node_t *)((unsigned char *)(link) - (int)(&(((list_node_t *)0)->link))));
+  }
+  return node;
+}
+list_node_t * list_rget(list_t *list, int index) 
+{
+  list_node_t *node;list_link_t *link;node = NULL;
+  if (list->count <= 0) {return NULL;}
+  if (index < 0 || index >= list->count) {return NULL;}
+  if (index < list->count) 
+  {
+    link = list->head.prev;
+    while (index > 0) {link = link->prev;index--;}
+    node = ((list_node_t *)((unsigned char *)(link) - (int)(&(((list_node_t *)0)->link))));
+  }
+  return node;
+}
+void list_lapply(list_t *list, void (*func)(void *)) 
+{
+	int i;list_node_t *node;node = NULL;
+	for(i = 0;i < list->count;i++)
+	{
+		node = list_lget(list, i);
+		if(node != NULL){func(node->data);}
+	}
+	return ;
+}
+void list_rapply(list_t *list, void (*func)(void *)) 
+{
+	int i;list_node_t *node;node = NULL;
+	for(i = 0;i < list->count;i++)
+	{
+		node = list_rget(list, i);
+		if(node != NULL){func(node->data);}
+	}
+	return ;
+}
+
+vector.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include <math.h>
+#include <float.h>
+#include <time.h>
+#include <ctype.h>
+
+#ifndef NULL
+#define NULL ((void*) 0)
+#endif
+
+typedef struct {int count;int max;void **mem;} vector_t;
+
+void vector_init(vector_t *vec){vec->count = 0;vec->max = 0;vec->mem = NULL;}
+void vector_free(vector_t *vec){if(vec->mem != NULL){free(vec->mem);vec->mem = NULL;}vector_init(vec);}
+int vector_get(vector_t *vec, int index, void **item){if(index < 0 || index >= vec->count){return 0;}*item = vec->mem[index];return 1;}
+int vector_set(vector_t *vec, int index, void *item){if(index < 0 || index >= vec->count){return 0;}vec->mem[index] = item;return 1;}
+void vector_swap(vector_t *vec, int indexA, int indexB)
+{
+	void *itemA;void *itemB;vector_get(vec, indexA, &itemA);vector_get(vec, indexB, &itemB);vector_set(vec, indexA, itemB);vector_set(vec, indexB, itemA);
+}
+int vector_reserve(vector_t *vec, int size)
+{
+	int max;void *temp;
+	if(size <= vec->max){return 1;}
+	else if(vec->max == 0 && size > 0){max = 4;if(size > 4){do{max *= 2;}while(size > max);}}
+	else if(vec->max > 0 && size > vec->max){max = vec->max;do{max *= 2;}while(size > max);}
+	temp = NULL;temp = realloc(vec->mem, (max*sizeof(void *)));if(temp == NULL){return 0;}
+	vec->mem = temp;vec->max = max;return 1;
+}
+int vector_add(vector_t *vec, void *item)
+{
+	if(vector_reserve(vec, (vec->count+1)) == 1){vec->mem[vec->count] = item;vec->count++;return 1;}else{return 0;}
+}
+int vector_insert(vector_t *vec, int index, void *item)
+{
+	int i;if(index < 0 || index > vec->count){return 0;}
+	if(vector_reserve(vec, (vec->count+1)) == 1)
+	{
+		if(index == vec->count){vec->mem[vec->count] = item;vec->count++;return 1;}
+		else
+		{
+			for(i = vec->count;i > index;i--){vec->mem[i] = vec->mem[i-1];}vec->mem[index] = item;vec->count++;return 1;
+		}
+	}
+	else{return 0;}	
+}
+int vector_delete(vector_t *vec, int index, void **item)
+{
+	int i;if(index < 0 || index >= vec->count){return 0;}if(item != NULL){*item = vec->mem[index];}
+	if(index < vec->count-1){for(i = index; i < vec->count-1; i++){vec->mem[i] = vec->mem[i+1];}}
+	vec->mem[vec->count-1] = NULL;vec->count--;return 1;
+}
+int vector_delete_min_max(vector_t *vec, int min_index, int max_index)
+{
+	int i;int j;int count;if(min_index < 0 || min_index >= vec->count){return 0;}if(max_index < 0 || max_index >= vec->count){return 0;}
+	if(min_index > max_index){return 0;}count = (max_index-min_index+1);
+	if(max_index < (vec->count-1))
+	{
+		i = (max_index+1);j = min_index;while(i < vec->count){vec->mem[j] = vec->mem[i];i++;j++;}for(i = j;i < vec->count;i++){vec->mem[i] = NULL;}
+	}
+	else{for(i = min_index;i < vec->count;i++){vec->mem[i] = NULL;}}
+	vec->count -= count;return 1;
+}
+int vector_copy_vec(vector_t *a, vector_t *b)
+{
+	int i;if(vector_reserve(b, a->count) == 0){return 0;}
+	for(i = 0; i < a->count; i++){b->mem[i] = a->mem[i];}for(i = a->count; i < b->max; i++){b->mem[i] = NULL;}
+	b->count = a->count;return 1;
+}
+int vector_copy_vec_two(vector_t *a, vector_t *b)
+{
+	int i;if(vector_reserve(b, a->count) == 0){return 0;}
+	for(i = 0; i < a->count; i++){b->mem[i] = a->mem[i];}
+	b->count = a->count;return 1;	
+}
+int vector_copy_vec_min_max(vector_t *a, int min_index, int max_index, vector_t *b)
+{
+	int i;int j;int count;if(min_index < 0 || min_index >= a->count){return 0;}if(max_index < 0 || max_index >= a->count){return 0;}
+	if(min_index > max_index){return 0;}count = (max_index-min_index+1);if(vector_reserve(b, count) == 0){return 0;}
+	i = min_index;j = 0;while(i <= max_index){b->mem[j] = a->mem[i];i++;j++;}for(i = count; i < b->max; i++){b->mem[i] = NULL;}
+	b->count = count;return 1;
+}
+int vector_copy_vec_min_max_two(vector_t *a, int min_index, int max_index, vector_t *b)
+{
+	int i;int j;int count;if(min_index < 0 || min_index >= a->count){return 0;}if(max_index < 0 || max_index >= a->count){return 0;}
+	if(min_index > max_index){return 0;}count = (max_index-min_index+1);if(vector_reserve(b, count) == 0){return 0;}
+	i = min_index;j = 0;while(i <= max_index){b->mem[j] = a->mem[i];i++;j++;}
+	b->count = count;return 1;	
+}
+int vector_add_vec(vector_t *a, vector_t *b)
+{
+	int i;int j;int one;one = (a->count+b->count);if(vector_reserve(b, one) == 0){return 0;}
+	i = 0;j = b->count;while(i < a->count){b->mem[j] = a->mem[i];i++;j++;}for(i = one; i < b->max; i++){b->mem[i] = NULL;}
+	b->count = one;return 1;
+}
+int vector_add_vec_two(vector_t *a, vector_t *b)
+{
+	int i;int j;int one;one = (a->count+b->count);if(vector_reserve(b, one) == 0){return 0;}
+	i = 0;j = b->count;while(i < a->count){b->mem[j] = a->mem[i];i++;j++;}
+	b->count = one;return 1;
+}
+int vector_add_vec_min_max(vector_t *a, int min_index, int max_index, vector_t *b)
+{
+	int i;int j;int count;int one;if(min_index < 0 || min_index >= a->count){return 0;}if(max_index < 0 || max_index >= a->count){return 0;}
+	if(min_index > max_index){return 0;}count = (max_index-min_index+1);one = (count+(b->count));if(vector_reserve(b, one) == 0){return 0;}
+	i = min_index;j = b->count;while(i <= max_index){b->mem[j] = a->mem[i];i++;j++;}for(i = one; i < b->max; i++){b->mem[i] = NULL;}
+	b->count = one;return 1;
+}
+int vector_add_vec_min_max_two(vector_t *a, int min_index, int max_index, vector_t *b)
+{
+	int i;int j;int count;int one;if(min_index < 0 || min_index >= a->count){return 0;}if(max_index < 0 || max_index >= a->count){return 0;}
+	if(min_index > max_index){return 0;}count = (max_index-min_index+1);one = (count+(b->count));if(vector_reserve(b, one) == 0){return 0;}
+	i = min_index;j = b->count;while(i <= max_index){b->mem[j] = a->mem[i];i++;j++;}
+	b->count = one;return 1;
+}
+int vector_insert_vec_two(vector_t *a, vector_t *b, int b_index)
+{
+	int i;int j;int one;if(b_index < 0 || b_index > b->count){return 0;}one = (a->count+b->count);if(vector_reserve(b, one) == 0){return 0;}
+	if(b_index == b->count){i = 0;j = b_index;while(i < a->count){b->mem[j] = a->mem[i];i++;j++;}}
+	else
+	{
+		i = (b->count-1);j = (one-1);while(i >= b_index){b->mem[j] = b->mem[i];;i--;j--;}
+		i = 0;j = b_index;while(i < a->count){b->mem[j] = a->mem[i];i++;j++;}
+	}
+	b->count = one;return 1;
+}
+void vector_set_vec(vector_t *a, vector_t *b){b->count = a->count;b->max = a->max;b->mem = a->mem;}
+
+NQueens.java
+
+public class NQueens
+{
+    public static void main(String[] args)
+    {
+        boolean[][] board = getBoard(8);
+        int queensPlaced = 0;
+
+        findSolution(queensPlaced, board);
+    }
+
+    public static void findSolution(int queensPlaced, boolean[][] board)
+    {
+        solve(queensPlaced, board);
+    }
+
+    public static boolean solve(int queensPlaced, boolean[][] board)
+    {
+        // if we have 8 queens placed successfully, break recursion
+        if (queensPlaced == 8)
+        {
+            System.out.println("SOLVED!");
+            displayBoard(board);
+            return true;
+        }
+        else
+        {
+            // iterate through the rows and columns of the board
+            for (int i = 0; i < board.length; i++)
+            {
+                for (int j = 0; j < board[i].length; j++)
+                {
+                    if (isValidMove(i, j, board))
+                    {
+                        // put a queen on the first valid space
+                        board[i][j] = true;
+                        queensPlaced++;
+   
+                        //如果想要找出全部的Solution，则可以使用下面3行
+                        //solve(queensPlaced, board);
+                        //board[i][j] = false;
+                        //queensPlaced--;
+
+                        //如果想要找出一个Solution，则可以使用下面的代码
+                        if (solve(queensPlaced, board))
+                        {
+                            return true;
+                        }
+                        else
+                        {
+                            // if the next row can't be solved, remove the queen from this
+                            // space and loop to the next valid space in the current row
+                            board[i][j] = false;
+                            queensPlaced--;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean isValidMove(int row, int col, boolean[][] board)
+    {
+        // check row
+        for (int i = 0; i < board[row].length; i++)
+        {
+            if (board[row][i])
+            {
+                return false;
+            }
+        }
+
+        // check column
+        for (int i = 0; i < board.length; i++)
+        {
+            if (board[i][col])
+            {
+                return false;
+            }
+        }
+
+        // check left-rising diagonal
+        for (int i = row, j = col; i >= 0 && j >= 0; i--, j--)
+        {
+            if (board[i][j])
+            {
+                return false;
+            }
+        }
+
+        for (int i = row + 1, j = col + 1; i < board.length && j < board[i].length; i++, j++)
+        {
+            if (board[i][j])
+            {
+                return false;
+            }
+        }
+
+        // check right-rising diagonal
+        for (int i = row, j = col; i >= 0 && j < board[i].length; i--, j++)
+        {
+            if (board[i][j])
+            {
+                return false;
+            }
+        }
+
+        for (int i = row + 1, j = col - 1; i < board.length && j >= 0; i++, j--)
+        {
+            if (board[i][j])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public static void displayBoard(boolean[][] board)
+    {
+        for (int i = 0; i < board.length; i++)
+        {
+            for (int j = 0; j < board[i].length; j++)
+            {
+                if (board[i][j])
+                {
+                    System.out.print("Q ");
+                }
+                else
+                {
+                    System.out.print("* ");
+                }
+            }
+            System.out.println();
+        }
+    }
+
+    public static boolean[][] getBoard(int size)
+    {
+        return new boolean[size][size];
+    }
+}
+
+string.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include <math.h>
+#include <float.h>
+#include <time.h>
+#include <ctype.h>
+
+#ifndef NULL
+#define NULL ((void*) 0)
+#endif
+
+#define min(x, y) ({typeof(x) inner_one = (x);typeof(y) inner_two = (y);(void)(&inner_one == &inner_two);inner_one < inner_two ? inner_one : inner_two;})
+#define max(x, y) ({typeof(x) inner_one = (x);typeof(y) inner_two = (y);(void)(&inner_one == &inner_two);inner_one > inner_two ? inner_one : inner_two;})
+
+typedef struct {uint32_t length;uint32_t capacity;char *buffer;} string_t;
+
+uint32_t string_length(string_t *string){if(string == NULL){return 0;}if(string->buffer == NULL){return 0;}return (string->length);}
+uint32_t string_capacity(string_t *string){if(string == NULL){return 0;}if(string->buffer == NULL){return 0;}return (string->capacity);}
+char * string_buffer(string_t *string){if(string == NULL){return NULL;}return (string->buffer);}
+int string_reserve(string_t *string, uint32_t size)
+{
+	uint32_t capacity;void *temp;capacity = 0;
+	if(size <= string->capacity){return 1;}
+	else if(string->capacity == 0 && size > 0){capacity = 8;if(size > 8){do{capacity *= 2;}while(size > capacity);}}
+	else if(string->capacity > 0 && size > string->capacity){capacity = string->capacity;do{capacity *= 2;}while(size > capacity);}
+	if(capacity > 0)
+	{
+		temp = NULL;temp = realloc(string->buffer, capacity * sizeof(char));
+		if(temp != NULL){string->buffer = temp;string->capacity = capacity;return 1;}else{return 0;}
+	}
+	else {return 1;}
+}
+int string_expand(string_t *string, uint32_t size)
+{
+	if(string == NULL){return 0;}if(size <= 0){return 0;}if(string_reserve(string, (string->length+size+1)) == 1){return 1;}else{return 0;}
+}
+uint32_t powPos(uint32_t a)
+{
+  if(a <= 1){return 1;}
+  a--;
+  a |= (a >> 1);
+  a |= (a >> 2);
+  a |= (a >> 4);
+  a |= (a >> 8);
+  a |= (a >> 16);
+  return a+1;
+}
+int string_init(string_t *string, uint32_t size)
+{
+	uint32_t one;if(string == NULL){return 0;}if(size <= 0){return 0;}if((size+1) >= 0x80000000U){return 0;}
+	one = powPos(size+1);string->length = 0;string->capacity = 0;string->buffer = NULL;
+	if(string_reserve(string, one) == 0){return 0;}string->buffer[0] = 0;return 1;
+}
+string_t * string_create(uint32_t size)
+{
+	string_t *string;if(size <= 0){return NULL;}if((size+1) >= 0x80000000U){return NULL;}string = NULL;string = malloc(sizeof(string_t));
+	if(string != NULL){if(string_init(string, size) == 0){free(string);string = NULL;return string;}else{return string;}}
+	return string;
+}
+string_t * string_insert_len(string_t *string, uint32_t pos, char *val, uint32_t length)
+{
+	uint32_t offset;uint32_t count;if(string == NULL){return NULL;}if(pos < 0 || pos > string->length){return NULL;}if(val == NULL){return NULL;}
+	if(length < 0){return NULL;}if(length == 0){return string;}
+	if(val >= string->buffer && val < (string->buffer+string->capacity))
+	{
+		offset = (val-string->buffer);if((offset+length) > string->length){return NULL;}
+		if(string_expand(string, length) == 0){return NULL;}val = (string->buffer+offset);count = 0;
+		if(pos < string->length){memmove((string->buffer+pos+length), (string->buffer+pos), (string->length-pos));}
+		if(offset < pos){count = min(length, (pos-offset));memcpy((string->buffer+pos), val, count);}
+		if(length > count){memcpy((string->buffer+pos+count), (val+count+length), (length-count));}
+	}
+	else
+	{
+		if(string_expand(string, length) == 0){return NULL;}
+		if(pos < string->length){memmove((string->buffer+pos+length), (string->buffer+pos), (string->length-pos));}
+		memcpy((string->buffer+pos), val, length);
+	}
+	string->length += length;string->buffer[string->length] = 0;return string;
+}
+string_t * string_append_len(string_t *string, char *val, uint32_t length)
+{
+	if(string == NULL){return NULL;}if(val == NULL){return NULL;}if(length < 0){return NULL;}if(length == 0){return string;}
+	return string_insert_len(string, string->length, val, length);
+}
+string_t * string_prepend_len(string_t *string, char *val, uint32_t length)
+{
+	if(string == NULL){return NULL;}if(val == NULL){return NULL;}if(length < 0){return NULL;}if(length == 0){return string;}
+	return string_insert_len(string, 0, val, length);
+}
+string_t * string_overwrite_len(string_t *string, uint32_t pos, char *val, uint32_t length)
+{
+	uint32_t offset;if(string == NULL){return NULL;}if(pos < 0 || pos > string->length){return NULL;}if(val == NULL){return NULL;}
+	if(length < 0){return NULL;}if(length == 0){return string;}
+	if(val >= string->buffer && val < (string->buffer+string->capacity))
+	{
+		offset = (val-string->buffer);if((offset+length) > string->length){return NULL;}
+		if((pos+length) > string->length){if(string_reserve(string, (pos+length+1)) == 0){return NULL;}}
+		val = (string->buffer+offset);memmove((string->buffer+pos), val, length);
+	}
+	else
+	{
+		if((pos+length) > string->length){if(string_reserve(string, (pos+length+1)) == 0){return NULL;}}
+		memcpy((string->buffer+pos), val, length);
+	}
+	string->length = max((pos+length),string->length);string->buffer[string->length] = 0;return string;
+}
+string_t * string_create_val(char *val, uint32_t length)
+{
+	string_t *string;if(length <= 0){return NULL;}if(val == NULL){return string_create(length);}
+	string = string_create(length);if(string != NULL){return string_insert_len(string, string->length, val, length);}
+	return string;
+}
+int string_reset(string_t *string)
+{
+	if(string == NULL){return 0;}if(string->buffer == NULL){return 0;}string->length = 0;string->buffer[0] = 0;return 1;
+}
+string_t * string_duplicate(string_t *string)
+{
+	if(string == NULL){return NULL;}if(string->buffer == NULL){return NULL;}if(string->length <= 0){return NULL;}
+	return string_create_val(string->buffer, string->length);
+}
+string_t * string_reverse(string_t *string)
+{
+	char one;uint32_t left;uint32_t right;if(string == NULL){return NULL;}if(string->buffer == NULL){return NULL;}if(string->length <= 0){return NULL;}
+	left = 0;right = (string->length-1);
+	while(left < right){one = string->buffer[left];string->buffer[left] = string->buffer[right];string->buffer[right] = one;left++;right--;}
+	return string;
+}
+string_t * string_reverse_len(string_t *string, uint32_t pos, uint32_t length)
+{
+	char one;uint32_t left;uint32_t right;if(string == NULL){return NULL;}if(string->buffer == NULL){return NULL;}if(string->length <= 0){return NULL;}
+	if(pos < 0 || pos > string->length){return NULL;}if(length < 0){return NULL;}if(length == 0){return string;}
+	if((pos+length) > string->length){return NULL;}left = pos;right = ((pos+length)-1);
+	while(left < right){one = string->buffer[left];string->buffer[left] = string->buffer[right];string->buffer[right] = one;left++;right--;}
+	return string;
+}
+int string_substr(string_t *string, uint32_t pos, uint32_t length, char *output)
+{
+	if(string == NULL){return 0;}if(string->buffer == NULL){return 0;}if(string->length <= 0){return 0;}
+	if(pos < 0 || pos > string->length){return 0;}if(length < 0){return 0;}if(length == 0){output[length] = 0;return 1;}
+	if((pos+length) > string->length){return 0;}memcpy(output, (string->buffer+pos), length);output[length] = 0;return 1;
+}
+int string_to_uppercase(string_t *string)
+{
+	uint32_t index;char *pos;if(string == NULL){return 0;}if(string->buffer == NULL){return 0;}if(string->length <= 0){return 0;}
+	for(index = 0;index < string->length;index++){pos = (string->buffer+index);*pos = toupper(*pos);}return 1;
+}
+int string_to_lowercase(string_t *string)
+{
+	uint32_t index;char *pos;if(string == NULL){return 0;}if(string->buffer == NULL){return 0;}if(string->length <= 0){return 0;}
+	for(index = 0;index < string->length;index++){pos = (string->buffer+index);*pos = tolower(*pos);}return 1;
+}
+int string_trim(string_t *string)
+{
+	uint32_t index;uint32_t length;if(string == NULL){return 0;}if(string->buffer == NULL){return 0;}if(string->length <= 0){return 0;}
+	length = string->length;while(length > 0 && isspace(string->buffer[length-1]) != 0){length--;}
+	string->length = length;string->buffer[string->length] = 0;if(string->length <= 0){return 1;}
+	index = 0;while(index < string->length && isspace(string->buffer[index]) != 0){index++;}if(index == 0){return 1;}
+	string->length -= index;memmove(string->buffer, (string->buffer+index), string->length);string->buffer[string->length] = 0;return 1;
+}
+int string_rtrim(string_t *string)
+{
+	uint32_t length;if(string == NULL){return 0;}if(string->buffer == NULL){return 0;}if(string->length <= 0){return 0;}
+	length = string->length;while(length > 0 && isspace(string->buffer[length-1]) != 0){length--;}
+	string->length = length;string->buffer[string->length] = 0;return 1;
+}
+int string_ltrim(string_t *string)
+{
+	uint32_t index;if(string == NULL){return 0;}if(string->buffer == NULL){return 0;}if(string->length <= 0){return 0;}
+	index = 0;while(index < string->length && isspace(string->buffer[index]) != 0){index++;}if(index == 0){return 1;}
+	string->length -= index;memmove(string->buffer, (string->buffer+index), string->length);string->buffer[string->length] = 0;return 1;
+}
+void string_free(string_t *string)
+{
+	if(string != NULL){if(string->buffer != NULL){free(string->buffer);string->buffer = NULL;}string->length = 0;string->capacity = 0;}
+}
+void string_destroy(string_t *string){if(string != NULL){string_free(string);free(string);}}
+int string_equal(string_t *one, string_t *two)
+{
+	if(one == two){return 1;}if(one == NULL){return 0;}if(two == NULL){return 0;}if(one->length != two->length){return 0;}if(one->length <= 0){return 1;}
+	if(memcmp(one->buffer, two->buffer, one->length) == 0){return 1;}else{return 0;}
+}
+int string_truncate(string_t *string, uint32_t length)
+{
+	if(string == NULL){return 0;}if(length < 0 || length > string->length){return 0;}
+	string->length = min(length,string->length);string->buffer[string->length] = 0;return 1;
+}
+int string_erase(string_t *string, uint32_t pos, uint32_t length)
+{
+	if(string == NULL){return 0;}if(pos < 0 || pos > string->length){return 0;}if(length < 0){return 0;}if(length == 0){return 1;}
+	if((pos+length) > string->length){return 0;}if((pos+length) == string->length){string->length = pos;string->buffer[string->length] = 0;return 1;}
+	memmove((string->buffer+pos), (string->buffer+pos+length), (string->length-(pos+length)));
+	string->length -= length;string->buffer[string->length] = 0;return 1;
+}
+string_t * string_assign(string_t *string, char *val, uint32_t length)
+{
+	uint32_t offset;if(string == NULL || val == NULL){return NULL;}if(length < 0){return NULL;}if(length == 0){return string;}
+	if(val >= string->buffer && val < (string->buffer+string->capacity))
+	{
+		if(val == string->buffer){if(length > string->length){return NULL;}string->length = length;string->buffer[string->length] = 0;return string;}
+		else
+		{
+			offset = (val-string->buffer);if((offset+length) > string->length){return NULL;}
+			memmove(string->buffer, val, length);string->length = length;string->buffer[string->length] = 0;return string;
+		}
+	}
+	else
+	{
+		if(string_reserve(string, (length+1)) == 0){return NULL;}
+		memcpy(string->buffer, val, length);string->length = length;string->buffer[string->length] = 0;return string;
+	}
+}
+string_t * string_insert_vprintf(string_t *string, uint32_t pos, char *format, va_list args)
+{
+	string_t *one;char *val;uint32_t length;if(string == NULL){return NULL;}if(format == NULL){return NULL;}if(args == NULL){return NULL;}
+	val = NULL;length = vasprintf(&val, format, args);if(length < 0){return NULL;}if(val == NULL){return NULL;}if(length == 0){free(val);return string;}
+	one = string_insert_len(string, pos, val, length);free(val);return one;
+}
+string_t * string_insert_printf(string_t *string, uint32_t pos, char *format, ...)
+{
+	string_t *one;va_list args;va_start(args, format);one = string_insert_vprintf(string, pos, format, args);va_end(args);return one;
+}
+string_t * string_overwrite_vprintf(string_t *string, uint32_t pos, char *format, va_list args)
+{
+	string_t *one;char *val;uint32_t length;if(string == NULL){return NULL;}if(format == NULL){return NULL;}if(args == NULL){return NULL;}
+	val = NULL;length = vasprintf(&val, format, args);if(length < 0){return NULL;}if(val == NULL){return NULL;}if(length == 0){free(val);return string;}
+	one = string_overwrite_len(string, pos, val, length);free(val);return one;
+}
+string_t * string_overwrite_printf(string_t *string, uint32_t pos, char *format, ...)
+{
+	string_t *one;va_list args;va_start(args, format);one = string_overwrite_vprintf(string, pos, format, args);va_end(args);return one;
+}
+string_t * string_prepend_vprintf(string_t *string, char *format, va_list args)
+{
+	string_t *one;char *val;uint32_t length;if(string == NULL){return NULL;}if(format == NULL){return NULL;}if(args == NULL){return NULL;}
+	val = NULL;length = vasprintf(&val, format, args);if(length < 0){return NULL;}if(val == NULL){return NULL;}if(length == 0){free(val);return string;}
+	one = string_insert_len(string, 0, val, length);free(val);return one;
+}
+string_t * string_prepend_printf(string_t *string, char *format, ...)
+{
+	string_t *one;va_list args;va_start(args, format);one = string_prepend_vprintf(string, format, args);va_end(args);return one;
+}
+string_t * string_append_vprintf(string_t *string, char *format, va_list args)
+{
+	string_t *one;char *val;uint32_t length;if(string == NULL){return NULL;}if(format == NULL){return NULL;}if(args == NULL){return NULL;}
+	val = NULL;length = vasprintf(&val, format, args);if(length < 0){return NULL;}if(val == NULL){return NULL;}if(length == 0){free(val);return string;}
+	one = string_insert_len(string, string->length, val, length);free(val);return one;
+}
+string_t * string_append_printf(string_t *string, char *format, ...)
+{
+	string_t *one;va_list args;va_start(args, format);one = string_append_vprintf(string, format, args);va_end(args);return one;
+}
+string_t * string_vprintf(string_t *string, char *format, va_list args)
+{
+	char *val;uint32_t length;if(string == NULL){return NULL;}if(format == NULL){return NULL;}if(args == NULL){return NULL;}
+	val = NULL;length = vasprintf(&val, format, args);if(length < 0){return NULL;}if(val == NULL){return NULL;}if(length == 0){free(val);return string;}
+	if(string_reserve(string, (length+1)) == 0){return NULL;}
+	memcpy(string->buffer, val, length);string->length = length;string->buffer[string->length] = 0;free(val);return string;
+}
+string_t * string_printf(string_t *string, char *format, ...)
+{
+	string_t *one;va_list args;va_start(args, format);one = string_vprintf(string, format, args);va_end(args);return one;
+}
+
+mersenne_twister_32.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include <math.h>
+#include <float.h>
+#include <time.h>
+#include <ctype.h>
+
+#ifndef NULL
+#define NULL ((void*) 0)
+#endif
+
+#define min(x, y) ({typeof(x) inner_one = (x);typeof(y) inner_two = (y);(void)(&inner_one == &inner_two);inner_one < inner_two ? inner_one : inner_two;})
+#define max(x, y) ({typeof(x) inner_one = (x);typeof(y) inner_two = (y);(void)(&inner_one == &inner_two);inner_one > inner_two ? inner_one : inner_two;})
+
+typedef uint8_t byte_t;
+typedef size_t  word_t;
+
+#define MT_32_W 32
+#define MT_32_N 624
+#define MT_32_M 397
+#define MT_32_R 31
+#define MT_32_A 0x9908B0DFU
+#define MT_32_U 11
+#define MT_32_D 0xFFFFFFFFU
+#define MT_32_S 7
+#define MT_32_B 0x9D2C5680U
+#define MT_32_T 15
+#define MT_32_C 0xEFC60000U
+#define MT_32_L 18
+#define MT_32_F 0x6C078965U
+#define MT_32_UPPER_MASK 0x80000000U
+#define MT_32_LOWER_MASK 0x7FFFFFFFU
+
+typedef struct {uint32_t mt[MT_32_N];int index;} mt_32_gen_t;
+
+void mt_32_seed(mt_32_gen_t *mt_32_gen, uint32_t seed)
+{
+	int i;mt_32_gen->mt[0] = seed;
+	for(i = 1;i < MT_32_N;i++){mt_32_gen->mt[i] = ((MT_32_F * (mt_32_gen->mt[i-1] ^ (mt_32_gen->mt[i-1] >> (MT_32_W - 2)))) + i);}
+	mt_32_gen->index = MT_32_N;
+}
+void mt_32_twist(mt_32_gen_t *mt_32_gen)
+{
+	int i;uint32_t y;uint32_t one;
+	for(i = 0;i < MT_32_N;i++)
+	{
+		y = ((mt_32_gen->mt[i] & MT_32_UPPER_MASK) + (mt_32_gen->mt[(i+1) % MT_32_N] & MT_32_LOWER_MASK));
+		one = (y >> 1);if(y % 2 != 0){one = (one ^ MT_32_A);}
+		mt_32_gen->mt[i] = (mt_32_gen->mt[(i + MT_32_M) % MT_32_N] ^ one);
+	}
+	mt_32_gen->index = 0;
+}
+uint32_t mt_32_next(mt_32_gen_t *mt_32_gen)
+{
+	uint32_t y;if(mt_32_gen->index >= MT_32_N){mt_32_twist(mt_32_gen);}
+	y = mt_32_gen->mt[mt_32_gen->index];
+	y = (y ^ ((y >> MT_32_U) & MT_32_D));
+	y = (y ^ ((y << MT_32_S) & MT_32_B));
+	y = (y ^ ((y << MT_32_T) & MT_32_C));
+	y = (y ^ (y >> MT_32_L));
+	mt_32_gen->index++;return y;
+}
+FILE *fd;
+int n;
+
+void build()
+{
+	int i;mt_32_gen_t one_gen;uint32_t one_val;n = 32;mt_32_seed(&one_gen, 3331);
+	fd=fopen("out.txt", "wb");
+	for(i = 0; i < n; ++i)
+	{
+	    one_val = mt_32_next(&one_gen);
+	    fprintf(fd, "%u\n",one_val);
+	}
+	fprintf(fd, "\n");fprintf(fd, "\n");
+	fflush(fd);
+	fclose(fd);
+}
+
+int main()
+{
+	build();
+	return 0;
+}
+
+bitset.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <math.h>
+
+#ifndef NULL
+#define NULL ((void*) 0)
+#endif
+
+typedef struct {int set_count;unsigned long long bits[1024];} bitset_block_t;
+typedef struct {int bit_count;int block_count;int block_max;bitset_block_t **blocks;} bitset_t;
+
+int n;
+FILE *fd;
+
+int popcountll(unsigned long long x)
+{
+  int n;
+  if (x == 0){return 0;}
+  x = (x&0x5555555555555555ULL)+((x>>1)&0x5555555555555555ULL);
+  x = (x&0x3333333333333333ULL)+((x>>2)&0x3333333333333333ULL);
+  x = (x&0x0F0F0F0F0F0F0F0FULL)+((x>>4)&0x0F0F0F0F0F0F0F0FULL);
+  x = (x&0x00FF00FF00FF00FFULL)+((x>>8)&0x00FF00FF00FF00FFULL);
+  x = (x&0x0000FFFF0000FFFFULL)+((x>>16)&0x0000FFFF0000FFFFULL);
+  x = (x&0x00000000FFFFFFFFULL)+((x>>32)&0x00000000FFFFFFFFULL);
+  n = (int)x;
+  return n;
+}
+
+void bitset_block_init(bitset_block_t *block){block->set_count = 0;memset(block->bits,0,sizeof(block->bits));}
+bitset_block_t * bitset_block_alloc()
+{
+  bitset_block_t *block;block = NULL;block = (bitset_block_t *)malloc(sizeof(bitset_block_t));if(block != NULL){bitset_block_init(block);}
+  return block;
+}
+void bitset_block_free(bitset_block_t *block){if(block != NULL){free(block);}}
+void bitset_init(bitset_t *set){set->bit_count = 0;set->block_count = 0;set->block_max = 0;set->blocks = NULL;}
+bitset_t * bitset_alloc()
+{
+  bitset_t *set;set = NULL;set = (bitset_t *)malloc(sizeof(bitset_t));if(set != NULL){bitset_init(set);}
+  return set;
+}
+void bitset_free(bitset_t *set)
+{
+	int i;if(set == NULL){return ;}if(set->blocks == NULL){free(set);return ;}
+	for (i = 0; i < set->block_max; i++){if(set->blocks[i] != NULL){bitset_block_free(set->blocks[i]);}}
+	free(set->blocks);free(set);return ;
+}
+void bitset_clear(bitset_t *set)
+{
+	int i;if(set == NULL){return ;}if(set->blocks == NULL){bitset_init(set);return ;}if(set->block_max <= 0){bitset_init(set);return ;}
+	for(i = 0; i < set->block_max; i++){if(set->blocks[i] != NULL){bitset_block_init(set->blocks[i]);}}set->bit_count = 0;set->block_count = 0;
+}
+int bitset_reserve(bitset_t *set, int bit_count)
+{
+	void *temp;int one;int block_count;int block_max;int result;
+	if(bit_count <= 0) {return 1;}block_count = ((bit_count+(1024*64)-1)/(1024*64));block_max = set->block_max;
+	if(block_count <= block_max){if(set->bit_count < bit_count){set->bit_count = bit_count;set->block_count = block_count;}return 1;}
+	else if(block_count > block_max && block_max > 0)
+	{
+		temp = NULL;do{block_max *= 2;}while(block_count > block_max);one = (block_max*sizeof(bitset_block_t *));
+		temp = realloc(set->blocks, one);if(temp == NULL){return 0;}set->blocks = temp;result = 1;
+		for(one = set->block_max;one < block_max;one++)
+		{
+			temp = bitset_block_alloc();if(temp != NULL){set->blocks[one] = temp;}else{set->blocks[one] = NULL;if(result == 1){result = 0;}}
+		}
+		if(result == 1){set->bit_count = bit_count;set->block_count = block_count;set->block_max = block_max;return 1;}
+		else
+		{
+			for(one = set->block_max;one < block_max;one++)
+			{
+				if(set->blocks[one] != NULL){bitset_block_free(set->blocks[one]);set->blocks[one] = NULL;}
+			}
+			return 0;
+		}
+	}
+	else if(block_count > block_max && block_max == 0)
+	{
+		temp = NULL;block_max = 1;if(block_count > 1){do{block_max *= 2;}while(block_count > block_max);}
+		one = (block_max*sizeof(bitset_block_t *));temp = malloc(one);if(temp == NULL){return 0;}set->blocks = temp;result = 1;
+		for(one = set->block_max;one < block_max;one++)
+		{
+			temp = bitset_block_alloc();if(temp != NULL){set->blocks[one] = temp;}else{set->blocks[one] = NULL;if(result == 1){result = 0;}}
+		}
+		if(result == 1){set->bit_count = bit_count;set->block_count = block_count;set->block_max = block_max;return 1;}
+		else
+		{
+			for(one = set->block_max;one < block_max;one++)
+			{
+				if(set->blocks[one] != NULL){bitset_block_free(set->blocks[one]);set->blocks[one] = NULL;}
+			}
+			free(set->blocks);set->blocks = NULL;
+			return 0;
+		}
+	}
+	return 1;
+}
+int bitset_block_test_bit(bitset_block_t *block, int bit)
+{
+	int n;int b;unsigned long long mask;n = bit/64;b = bit%64;mask = 1ULL << b;if((block->bits[n] & mask) != 0ULL){return 1;}return 0;
+}
+void bitset_block_set_bit(bitset_block_t *block, int bit)
+{
+	int n;int b;unsigned long long mask;n = bit/64;b = bit%64;mask = 1ULL << b;if((block->bits[n] & mask) == 0ULL){block->set_count++;}
+	block->bits[n] |= mask;
+}
+void bitset_block_clr_bit(bitset_block_t *block, int bit)
+{
+	int n;int b;unsigned long long mask;n = bit/64;b = bit%64;mask = 1ULL << b;if((block->bits[n] & mask) != 0ULL){block->set_count--;}
+	block->bits[n] &= (~mask);
+}
+void bitset_block_toggle_bit(bitset_block_t *block, int bit)
+{
+	int n;int b;unsigned long long mask;n = bit/64;b = bit%64;mask = 1ULL << b;if((block->bits[n] & mask) != 0ULL){block->set_count--;}else{block->set_count++;}
+	block->bits[n] ^= mask;
+}
+void bitset_block_invert(bitset_block_t *block)
+{
+	int i;for(i = 0; i < 1024; i++){block->bits[i] = ~(block->bits[i]);}block->set_count = ((1024*64) - block->set_count);
+}
+void bitset_block_or(bitset_block_t *a, bitset_block_t *b)
+{
+	int i;int c;c = 0;for(i = 0; i < 1024; i++){a->bits[i] |= b->bits[i];c += popcountll(a->bits[i]);}a->set_count = c;
+}
+void bitset_block_xor(bitset_block_t *a, bitset_block_t *b)
+{
+	int i;int c;c = 0;for(i = 0; i < 1024; i++){a->bits[i] ^= b->bits[i];c += popcountll(a->bits[i]);}a->set_count = c;
+}
+void bitset_block_and(bitset_block_t *a, bitset_block_t *b)
+{
+	int i;int c;c = 0;for(i = 0; i < 1024; i++){a->bits[i] &= b->bits[i];c += popcountll(a->bits[i]);}a->set_count = c;
+}
+int bitset_set_count(bitset_t *set)
+{
+	int n;int i;n = 0;i = 0;while(i < set->block_count){if(set->blocks[i] != NULL){n += set->blocks[i]->set_count;}i++;}return n;
+}
+int bitset_test_bit(bitset_t *set, int bit)
+{
+	int one;int block_bit;bitset_block_t *block;if(bit < 0 || bit >= set->bit_count){return -2;}
+	one = bit/(1024*64);block_bit = bit%(1024*64);if(one >= set->block_count) {return -2;}block = set->blocks[one];
+	return bitset_block_test_bit(block, block_bit);
+}
+void bitset_set_bit(bitset_t *set, int bit)
+{
+	int one;int block_bit;bitset_block_t *block;if(bit < 0 || bit >= set->bit_count){return ;}
+	one = bit/(1024*64);block_bit = bit%(1024*64);if(one >= set->block_count) {return ;}block = set->blocks[one];
+	if(bitset_block_test_bit(block, block_bit) == 0){bitset_block_set_bit(block, block_bit);}
+}
+void bitset_clr_bit(bitset_t *set, int bit)
+{
+	int one;int block_bit;bitset_block_t *block;if(bit < 0 || bit >= set->bit_count){return ;}
+	one = bit/(1024*64);block_bit = bit%(1024*64);if(one >= set->block_count) {return ;}block = set->blocks[one];
+	if(bitset_block_test_bit(block, block_bit) == 1){bitset_block_clr_bit(block, block_bit);}
+}
+void bitset_toggle_bit(bitset_t *set, int bit)
+{
+	int one;int block_bit;bitset_block_t *block;if(bit < 0 || bit >= set->bit_count){return ;}
+	one = bit/(1024*64);block_bit = bit%(1024*64);if(one >= set->block_count) {return ;}block = set->blocks[one];
+	bitset_block_toggle_bit(block, block_bit);
+}
+void bitset_invert(bitset_t *set)
+{
+	int i;for(i = 0; i < set->block_count; i++){if(set->blocks[i] != NULL){bitset_block_invert(set->blocks[i]);}}
+}
+void bitset_or(bitset_t *a, bitset_t *b)
+{
+	int i;if(a->bit_count != b->bit_count || a->block_count != b->block_count){return ;}
+	for (i = 0; i < a->block_count; i++)
+	{
+		if (a->blocks[i] != NULL && b->blocks[i] != NULL)
+		{
+			bitset_block_or(a->blocks[i], b->blocks[i]);
+		}
+	}
+}
+void bitset_xor(bitset_t *a, bitset_t *b)
+{
+	int i;if(a->bit_count != b->bit_count || a->block_count != b->block_count){return ;}
+	for (i = 0; i < a->block_count; i++)
+	{
+		if (a->blocks[i] != NULL && b->blocks[i] != NULL)
+		{
+			bitset_block_xor(a->blocks[i], b->blocks[i]);
+		}
+	}
+}
+void bitset_and(bitset_t *a, bitset_t *b)
+{
+	int i;if(a->bit_count != b->bit_count || a->block_count != b->block_count){return ;}
+	for (i = 0; i < a->block_count; i++)
+	{
+		if (a->blocks[i] != NULL && b->blocks[i] != NULL)
+		{
+			bitset_block_and(a->blocks[i], b->blocks[i]);
+		}
+	}
+}
+void bitset_copy(bitset_t *a, bitset_t *b)
+{
+	int i;if(bitset_reserve(b, a->bit_count) == 0){return ;}
+	for (i = 0; i < a->block_count; i++)
+	{
+		if(a->blocks[i] != NULL && b->blocks[i] != NULL)
+		{
+			*(b->blocks[i]) = *(a->blocks[i]);
+		}
+	}
+	for (i = a->block_count; i < b->block_max; i++)
+	{
+		if(b->blocks[i] != NULL){bitset_block_init(b->blocks[i]);}
+	}
+	b->bit_count = a->bit_count;b->block_count = a->block_count;
+}
+void bitset_copy_bits(bitset_t *a, bitset_t *b, int bit_count)
+{
+	int i;int block_count;if(bit_count > a->bit_count || bit_count <= 0){return ;}if(bitset_reserve(b, a->bit_count) == 0){return ;}
+	block_count = ((bit_count+(1024*64)-1)/(1024*64));
+	for (i = 0; i < block_count; i++)
+	{
+		if(a->blocks[i] != NULL && b->blocks[i] != NULL)
+		{
+			*(b->blocks[i]) = *(a->blocks[i]);
+		}
+	}
+	for (i = block_count; i < b->block_max; i++)
+	{
+		if(b->blocks[i] != NULL){bitset_block_init(b->blocks[i]);}
+	}
+	b->bit_count = bit_count;b->block_count = block_count;
+}
+
+char BitTable[2] = "01";
+void printDataBit(void *item, int itemSize)
+{
+	int i;unsigned char oneValue;
+	for(i = 0; i < itemSize; ++i)
+	{
+		oneValue = (*(((unsigned char *)item)+i));
+		fprintf(fd, "%c\n%c\n%c\n%c\n%c\n%c\n%c\n%c\n",BitTable[(oneValue)&(1)],BitTable[(oneValue>>1)&(1)],BitTable[(oneValue>>2)&(1)],BitTable[(oneValue>>3)&(1)]
+		                                   ,BitTable[(oneValue>>4)&(1)],BitTable[(oneValue>>5)&(1)],BitTable[(oneValue>>6)&(1)],BitTable[(oneValue>>7)&(1)]);
+	}
+	return ;
+}
+void bitset_block_dump(bitset_block_t *block)
+{
+	int i;for(i = 0; i < 1024; i++){printDataBit(&(block->bits[i]), sizeof(block->bits[0]));}
+}
+void bitset_dump(bitset_t *set)
+{
+	int i;for(i = 0; i < set->block_count; i++){if(set->blocks[i] != NULL){bitset_block_dump(set->blocks[i]);}}
+}
+
+void build()
+{
+	int i;bitset_t *oneSetPtr;n = 128;
+	oneSetPtr = bitset_alloc();
+	if(oneSetPtr == NULL){return ;}
+	bitset_reserve(oneSetPtr, n);
+	for(i = 0; i < n; ++i)
+	{
+		if(i>10 && i<100){bitset_set_bit(oneSetPtr, i);}
+	}
+	fd=fopen("out.txt", "wb");
+	bitset_dump(oneSetPtr);
+	fprintf(fd, "\n");
+	fflush(fd);
+	fclose(fd);
+	bitset_free(oneSetPtr);
+}
+
+int main()
+{
+	build();
+	return 0;
+}
+
+Status.h
+#ifndef STATUS_H
+#define STATUS_H
+
+#include <stdio.h>
+
+/* 状态码 */
+#define TRUE        1   // 真/是
+#define FALSE       0   // 假/否
+#define OK          1   // 通过/成功
+#define ERROR       0   // 错误/失败
+
+//系统中已有此状态码定义，要防止冲突
+#ifndef OVERFLOW
+#define OVERFLOW    -2  //堆栈上溢
+#endif
+
+//系统中已有此状态码定义，要防止冲突
+#ifndef NULL
+#define NULL ((void*)0)
+#endif
+
+/* 状态码类型 */
+typedef int Status;
+
+/* 布尔类型 */
+typedef int Boolean;
+
+
+/* 全局变量*/
+extern Boolean debug;   // 是否使用debug模式
+
+
+/*
+ * 从文件中读取预设的英文符号
+ *
+ * 这是自定义的数据录入函数，用于从文件fp中读取格式化的输入，
+ * 与fscanf的不同之处在于此函数只会读取英文字符，对于中文字符，则直接跳过。
+ *
+ * 注：
+ * 1. 这里约定所有格式串为简单形式，如：%d%c%s等，而不是%2d%5s等
+ * 2. 读取字符串时，遇到空格或非打印字符会停止读取
+ */
+int ReadData(FILE* fp, char* format, ...);
+
+/*
+ * 摁下回车键以继续运行。
+ *
+ * 通常在测试阶段时，需要让每一步测试都暂停下来，以观察其输出，此时可以让debug=TRUE。
+ * 在发布时，可以让debug=FALSE，此时各个测试块将不会暂停。
+ */
+void PressEnterToContinue(Boolean debug);
+
+/*
+ * 函数暂停一段时间。
+ *
+ * time不代表具体的时间，只是代表一段时间间隔，
+ * 通过调节time的大小，可以使程序暂停适当的时间后继续运行。
+ */
+void Wait(long time);
+
+/*
+ * 跳过空白，寻找下一个"可读"符号。
+ *
+ * 此方法常用在读取字符的语句之前，这会跳过遇到目标字符之前的空白符号，
+ * 比如跳过'\r'、'\n'、'\r\n'、' '、'\t'、'\f'。
+ */
+void skipBlank(FILE* fp);
+
+#endif
+
+Status.c
+#include <stdio.h>
+#include <string.h>
+#include <stdarg.h> // 提供宏va_list、va_start、va_arg、va_end
+#include <ctype.h>  // 提供isprint原型
+#include "Status.h"
+
+/* 全局变量*/
+Boolean debug = FALSE;  // 是否使用debug模式。测试时可设置为TRUE，发布时可设置为FALSE(修改debug值后，一般需要重新生成静态库)。
+
+
+/*
+ * 从文件中读取预设的英文符号
+ *
+ * 这是自定义的数据录入函数，用于从文件fp中读取格式化的输入，
+ * 与fscanf的不同之处在于此函数只会读取英文字符，对于中文字符，则直接跳过。
+ *
+ * 注：
+ * 1. 这里约定所有格式串为简单形式，如：%d%c%s等，而不是%2d%5s等
+ * 2. 读取字符串时，遇到空格或非打印字符会停止读取
+ */
+int ReadData(FILE* fp, char* format, ...) {
+    int* i;     // 存储读取到的整型
+    float* f;   // 存储读取到的浮点型
+    char* ch;   // 存储读取到的字符型
+    char* s;    // 存储读取到的字符串型
+    
+    int n;      // 遍历存储字符串的字符数组
+    
+    int len;    // 格式串format的长度
+    int k;      // 遍历格式串时的游标
+    
+    int tmp;    // 暂存从文件中读取到的字符
+    
+    va_list ap; // 可变参数指针，指向存储数据的变量
+    
+    // 累计成功读取到的数据总数
+    int count = 0;
+    
+    
+    /*
+     * 获取格式串的长度
+     * 这里预设格式串仅由简单
+     */
+    len = strlen(format);
+    
+    // ap指向首个可变参数
+    va_start(ap, format);
+    
+    // 只遍历奇数索引，因为偶数索引下都是%
+    for(k = 1; k < len; k = k + 2) {
+        // 跳过所有非西文字符
+        while((tmp = getc(fp)) != EOF) {
+            // 遇到首个西文字符，将此西文字符重新放入输入流
+            if((tmp >= 0 && tmp < 127)) {
+                ungetc(tmp, fp);
+                break;
+            }
+        }
+        
+        // 如果已读到文件结尾，结束读取
+        if(tmp == EOF) {
+            break;
+        }
+        
+        // 遇到了"%c"，应该读取字符
+        if(format[k] == 'c') {
+            ch = va_arg(ap, char*);
+            
+            count += fscanf(fp, "%c", ch);
+        }
+        
+        // 遇到了"%d"，应该读取整型
+        if(format[k] == 'd') {
+            i = va_arg(ap, int*);
+            
+            while((tmp = getc(fp)) != EOF) {
+                // 寻找整数区域
+                if((tmp >= '0' && tmp <= '9') || tmp == '-' || tmp == '+') {
+                    ungetc(tmp, fp);
+                    break;
+                }
+            }
+            
+            if(tmp != EOF) {
+                count += fscanf(fp, "%d", i);
+            }
+        }
+        
+        // 读取浮点型，一律存储为double类型
+        if(format[k] == 'f') {
+            f = va_arg(ap, float*);
+            
+            while((tmp = getc(fp)) != EOF) {
+                if((tmp >= '0' && tmp <= '9') || tmp == '-' || tmp == '+' || tmp == '.') {
+                    ungetc(tmp, fp);
+                    break;
+                }
+            }
+            
+            if(tmp != EOF) {
+                count += fscanf(fp, "%f", f);
+            }
+        }
+        
+        // 读取字符串
+        if(format[k] == 's') {
+            s = va_arg(ap, char*);
+            
+            n = 0;
+            
+            // 查找排除空格的可打印字符
+            while((tmp = getc(fp)) != EOF && (!isprint(tmp) || tmp == ' ')) {
+            }
+            
+            // 如果未到文件结尾
+            if(tmp != EOF) {
+                
+                // 将上面读到的字符重新放入流中
+                ungetc(tmp, fp);
+                
+                while((tmp = getc(fp)) != EOF) {
+                    // 存储排除空格的可打印字符
+                    if(isprint(tmp) && tmp != ' ') {
+                        s[n++] = tmp;
+                    } else {
+                        ungetc(tmp, fp);
+                        break;
+                    }
+                }
+                
+                count++;
+            }
+            
+            // 字符串最后一个字符为空字符
+            s[n] = '\0';
+        }
+    }// for
+    
+    va_end(ap);
+    
+    return count;
+}
+
+/*
+ * 摁下回车键以继续运行。
+ *
+ * 通常在测试阶段时，需要让每一步测试都暂停下来，以观察其输出，此时可以让debug=TRUE。
+ * 在发布时，可以让debug=FALSE，此时各个测试块将不会暂停。
+ */
+void PressEnterToContinue(Boolean debug) {
+    fflush(stdin);
+    
+    // 处于测试阶段时，可以让debug=TRUE，手动输入换行，以便让程序暂停下来，观察每一步的输出
+    if(debug) {
+        printf("\nPress Enter to Continue...");
+        getchar();
+        
+        // 发布时，可以让debug=FALSE，自动添加换行，直接出结果
+    } else {
+        printf("\n");
+    }
+    
+    fflush(stdin);
+}
+
+/*
+ * 函数暂停一段时间。
+ *
+ * time不代表具体的时间，只是代表一段时间间隔，
+ * 通过调节time的大小，可以使程序暂停适当的时间后继续运行。
+ */
+void Wait(long time) {
+    double i;
+    
+    if(time<0) {
+        time = -time;
+    }
+    
+    for(i = 0.01; i <= 100000.0 * time; i += 0.01) {
+        // 空循环
+    }
+}
+
+/*
+ * 跳过空白，寻找下一个"可读"符号。
+ *
+ * 此方法常用在读取字符的语句之前，这会跳过遇到目标字符之前的空白符号，
+ * 比如跳过'\r'、'\n'、'\r\n'、' '、'\t'、'\f'。
+ */
+void skipBlank(FILE* fp) {
+    int ch;
+    
+    if(fp == NULL) {
+        return;
+    }
+    
+    while((ch = getc(fp)) != EOF) {
+        // 如果遇到ANSI码之外的符号，比如汉字，则直接跳过
+        if(ch >= 0 && ch < 127) {
+            // 如果遇到的ANSI码不是空白，比如'\r'、'\n'、'\r\n'、' '、'\t'、'\f'，则表示该符号"可读"
+            if(ch != '\r' && ch != '\n' && ch != ' ' && ch != '\t' && ch != '\f') {
+                // 将"可读"符号放入输入流，以待后续工具来读取它
+                ungetc(ch, fp);
+                break;  // 可以跳出循环了，因为已经找到了"可读"符号
+            }
+        }
+    }
+}
+
+Hanoi.h
+/*==============
+ * 汉诺塔
+ *
+ * 包含算法: 3.5
+ ===============*/
+
+#ifndef HANOI_H
+#define HANOI_H
+
+#include <stdio.h>
+#include <stdlib.h>
+#include "Status.h"
+
+#define N 5         // 汉诺塔中盘子总数
+
+// 汉诺塔图形信息
+typedef struct {
+    int** plates;   // 汉诺塔中的圆盘信息
+    int high[3];    // 三座塔的高度（持有的盘子数量）
+} Tower;
+
+
+/*
+ * ████████ 算法3.5 ████████
+ *
+ * 汉诺塔求解：以y塔为辅助，将x塔上前n个圆盘移动到z塔
+ */
+void hanoi(int n, char x, char y, char z);
+
+/*
+ * 移动汉诺塔圆盘：将第n个圆盘从x塔移到z塔。
+ */
+void move(char x, int n, char z);
+
+/*
+ * 汉诺塔图形信息初始化
+ *
+ *【注】
+ * 教材中无此操作。
+ * 增加此操作的目的是为了便于观察汉诺塔圆盘的移动过程
+ */
+void init(int n);
+
+/*
+ * 汉诺塔移动的图形表示，参数含义参见move()函数
+ *
+ *【注】
+ * 教材中无此操作。
+ * 增加此操作的目的是为了便于观察汉诺塔圆盘的移动过程
+ */
+void PrintGraph(char x, int n, char z);
+
+#endif
+
+Hanoi.c
+/*==============
+ * 汉诺塔
+ *
+ * 包含算法: 3.5
+ ===============*/
+
+#include "Hanoi.h"
+
+/* 全局变量 */
+Tower T;    // 汉诺塔
+int gStep;  // 统计移动步数
+char s[N+2][N+2];
+
+/*
+ * ████████ 算法3.5 ████████
+ *
+ * 汉诺塔求解：以y为辅助，将x上前n个圆盘移动到z
+ */
+void hanoi(int n, char x, char y, char z) {
+    if(n == 1) {                          // 欲移动n个圆盘，需先移动其上的n-1个圆盘
+        move(x, 1, z);                    // 将编号为1的圆盘从x移到z
+    } else {
+        hanoi(n - 1, x, z, y);            // 将x上编号为1至n-1的圆盘移到y，z作辅助塔
+        move(x, n, z);                    // 将编号为n的圆盘从x移到z
+        hanoi(n - 1, y, x, z);            // 将y上编号为1至n-1的圆盘移动到z，x作辅助塔
+    }
+}
+
+void move(char x, int n, char z) {
+    // step为全局变量，在main函数之外定义
+    gStep++;
+    printf("第%2d步：将第 %d 个圆盘从 %c 移到 %c \n", gStep, n, x, z);
+    
+    // 汉诺塔移动的图形表示
+    PrintGraph(x, n, z);
+}
+
+/*
+ * 汉诺塔图形信息初始化
+ *
+ *【注】
+ * 教材中无此操作。
+ * 增加此操作的目的是为了便于观察汉诺塔圆盘的移动过程
+ */
+void init(int n) {
+    int i;
+    int* towerX, * towerY, * towerZ;
+    
+    T.plates = (int**) malloc(3 * sizeof(int*));
+    
+    towerX = (int*) malloc(n * sizeof(int));
+    towerY = (int*) malloc(n * sizeof(int));
+    towerZ = (int*) malloc(n * sizeof(int));
+    
+    for(i = 0; i < n; ++i) {
+        towerX[i] = n - i;
+        towerY[i] = 0;
+        towerZ[i] = 0;
+    }
+    
+    T.plates[0] = towerX;
+    T.plates[1] = towerY;
+    T.plates[2] = towerZ;
+    
+    T.high[0] = n;
+    T.high[1] = 0;
+    T.high[2] = 0;
+
+    for(i = 0; i < n + 2; i++) {        
+        for(j = 0; j < i; j++) {
+            if(i == n + 1) {
+                s[i][j] = '-';  // 将最后一行初始化为托盘
+            } else {
+                s[i][j] = '*';
+            }
+        }
+        
+        if(i == n + 1) {
+            s[i][j - 1] = '\0';
+        } else {
+            s[i][j] = '\0';
+        }
+    }
+
+    // 汉诺塔移动的图形表示
+    PrintGraph('\0', 0, '\0');
+}
+
+/*
+ * 汉诺塔移动的图形表示
+ *
+ *【注】
+ * 教材中无此操作。
+ * 增加此操作的目的是为了便于观察汉诺塔圆盘的移动过程
+ */
+void PrintGraph(char t1, int n, char t2) {
+    int i, j;
+
+    
+    // 将n号盘子从t1中移除
+    if(t1 == 'x') {
+        T.plates[0][T.high[0] - 1] = 0;
+        T.high[0]--;
+    } else if(t1 == 'y') {
+        T.plates[1][T.high[1] - 1] = 0;
+        T.high[1]--;
+    } else if(t1 == 'z') {
+        T.plates[2][T.high[2] - 1] = 0;
+        T.high[2]--;
+    } else {
+        // t1上的圆盘不需要移动
+    }
+    
+    // 将n号盘子添加到t2中
+    if(t2 == 'x') {
+        T.plates[0][T.high[0]] = n;
+        T.high[0]++;
+    } else if(t2 == 'y') {
+        T.plates[1][T.high[1]] = n;
+        T.high[1]++;
+    } else if(t2 == 'z') {
+        T.plates[2][T.high[2]] = n;
+        T.high[2]++;
+    } else {
+        // t2上的圆盘不需要移动
+    }
+    
+    for(i = N - 1; i >= 0; i--) {
+        printf("%-*s | %-*s | %-*s\n", N, s[T.plates[0][i]], N, s[T.plates[1][i]], N, s[T.plates[2][i]]);
+    }
+    printf("%-*s + %-*s + %-*s\n", N, s[N + 1], N, s[N + 1], N, s[N + 1]);
+    printf("%-*s %-*s %-*s\n", N + 2, "x", N + 2, "y", N + 2, "z");
+    
+    printf("\n");
+}
+
+Hanoi_main.c
+#include "Hanoi.h"                        //**03 栈和队列**//
+
+int main(int argc, char** argv) {
+    char x = 'x';
+    char y = 'y';
+    char z = 'z';
+    
+    printf("作为示例，假设圆盘个数为 %d ，操作步骤如下...\n", N);
+    
+    init(N);
+    
+    hanoi(N, x, y, z);
+    
+    return 0;
+}
+
+Array.h
+/*========
+ * 多维数组
+ =========*/
+
+#ifndef ARRAY_H
+#define ARRAY_H
+
+#include <stdio.h>
+#include <stdlib.h>     // 提供malloc、realloc、free、exit原型
+#include <stdarg.h>     // 提供宏va_start、va_arg、va_end
+#include "Status.h"
+
+/* 宏定义 */
+#define MAX_ARRAY_DIM 8 // 这里假设数组的最大维度为8
+
+/* 数组元素类型 */
+typedef int ElemType;
+
+/* 数组的顺序存储表示 */
+typedef struct {
+    ElemType* base;     // 数组元素基址（存放数组元素）
+    int dim;            // 数组维数
+    int* bounds;        // 数组维界基址（存放数组行、列信息）
+    int* constants;     // 数组映像函数常量基址（存储遍历某个维度时，每次需要越过的元素个数）
+} Array;
+
+
+/*
+ * 初始化。
+ *
+ * 初始化维数为dim的数组，可变参数指示各维度的大小。
+ */
+Status InitArray(Array* A, int dim, ...);
+
+/*
+ * 销毁(结构)。
+ *
+ * 销毁数组占用的空间。
+ */
+Status DestroyArray(Array* A);
+
+/*
+ * 取值。
+ *
+ * 获取指定下标处的元素值，可变参数为dim个下标值，指示待获取元素所在下标。
+ */
+Status Value(Array A, ElemType* e, ...);
+
+/*
+ * 赋值。
+ *
+ * 为指定下标处的元素赋值，可变参数为dim个下标值，指示待赋值元素所在下标。
+ */
+Status Assign(Array* A, ElemType e, ...);
+
+/*
+ * 求出ap指示的值在数组A中的相对位置，
+ * 即计算从起点元素到目标元素需要跨越的元素数量。
+ */
+static Status Locate(Array A, va_list ap, int *off);
+
+#endif
+
+Array.c
+/*========
+ * 多维数组
+ =========*/
+
+#include "Array.h"
+
+/*
+ * 初始化。
+ *
+ * 初始化维数为dim的数组，可变参数指示各维度的大小。
+ */
+Status InitArray(Array* A, int dim, ...) {
+    int elemtotal;  // 统计数组中总元素个数
+    va_list ap;     // ap存放可变参数表信息，指示各维度的大小
+    int i;
+    
+    if(A == NULL) {
+        return ERROR;
+    }
+    
+    if(dim < 1 || dim > MAX_ARRAY_DIM) {    // 数组维数有限制
+        return ERROR;
+    }
+    
+    (*A).dim = dim;     // 初始化数组维度
+    
+    // 初始化数组维度信息表
+    (*A).bounds = (int*) malloc(dim * sizeof(int));
+    if((*A).bounds == NULL) {
+        exit(OVERFLOW);
+    }
+    
+    // 若维度长度合法，则存入bounds，并求出A的元素总数elemtotal
+    elemtotal = 1;
+    
+    // 使ap指向第一个可变参数，dim相当于起始标识
+    va_start(ap, dim);
+    
+    for(i = 0; i < dim; i++) {
+        // 记录当前维度的宽度
+        (*A).bounds[i] = va_arg(ap, int);
+        if((*A).bounds[i] <= 0) {
+            return ERROR;
+        }
+        
+        elemtotal *= A->bounds[i];
+    }
+    
+    // 置空ap
+    va_end(ap);
+    
+    // 初始化数组空间，以存放元素
+    (*A).base = (ElemType*) malloc(elemtotal * sizeof(ElemType));
+    if((*A).base == NULL) {
+        exit(OVERFLOW);
+    }
+    
+    // 初始化数组映像函数常量信息表
+    (*A).constants = (int*) malloc(dim * sizeof(int));
+    if((*A).constants == NULL) {
+        exit(OVERFLOW);
+    }
+    
+    // 遍历最后一个维度，每次总是需要跨越一个元素
+    (*A).constants[dim - 1] = 1;
+    for(i = dim - 2; i >= 0; i--) {
+        (*A).constants[i] = (*A).bounds[i + 1] * (*A).constants[i + 1];
+    }
+    
+    /*
+     * 举例：
+     * 对于三维数组[2,3,4]来说，bounds的值为<2,3,4>，constants的值为<12,4,1>
+     * 分析bounds，第一维中包含2个元素，第二维中包含3个元素，第三维中包含4个元素
+     * 分析constants，遍历第一维，每次需要跨过12个元素，遍历第二维，每次需要跨越4个元素，遍历第三维，每次需要跨越1个元素
+     */
+    
+    return OK;
+}
+
+/*
+ * 销毁(结构)。
+ *
+ * 销毁数组占用的空间。
+ */
+Status DestroyArray(Array* A) {
+    if(A == NULL || (*A).base == NULL || (*A).bounds == NULL || (*A).constants == NULL) {
+        return ERROR;
+    }
+    
+    free((*A).base);
+    (*A).base = NULL;
+    
+    free((*A).bounds);
+    (*A).bounds = NULL;
+    
+    free((*A).constants);
+    (*A).constants = NULL;
+    
+    (*A).dim = 0;
+    
+    return OK;
+}
+
+/*
+ * 取值。
+ *
+ * 获取指定下标处的元素值，可变参数为dim个下标值，指示待获取元素所在下标。
+ */
+Status Value(Array A, ElemType* e, ...) {
+    va_list ap;
+    Status result;
+    int off;
+    
+    va_start(ap, e);
+    
+    // 计算从起点元素到目标元素需要跨越的元素数量
+    result = Locate(A, ap, &off);
+    
+    va_end(ap);
+    
+    if(result == OVERFLOW) {
+        return result;
+    }
+    
+    *e = *(A.base + off);
+    
+    return OK;
+}
+
+/*
+ * 赋值。
+ *
+ * 为指定下标处的元素赋值，可变参数为dim个下标值，指示待赋值元素所在下标。
+ */
+Status Assign(Array* A, ElemType e, ...) {
+    va_list ap;
+    Status result;
+    int off;
+    
+    va_start(ap, e);
+    
+    // 计算从起点元素到目标元素需要跨越的元素数量
+    result = Locate(*A, ap, &off);
+    
+    va_end(ap);
+    
+    if(result == OVERFLOW) {
+        return result;
+    }
+    
+    *(A->base + off) = e;
+    
+    return OK;
+}
+
+/*
+ * 求出ap指示的值在数组A中的相对位置，
+ * 即计算从起点元素到目标元素需要跨越的元素数量。
+ */
+static Status Locate(Array A, va_list ap, int* off) {
+    int i, ind;
+    
+    *off = 0;
+    
+    for(i = 0; i < A.dim; i++) {
+        ind = va_arg(ap, int);
+    
+        // 保证下标不越界
+        if(ind < 0 || ind >= A.bounds[i]) {
+            return OVERFLOW;
+        }
+    
+        // 某个维度的单位元素个数*需要跨过的单位
+        *off += A.constants[i] * ind;
+    }
+    
+    return OK;
+}
+
+Array_main.c
+#include <stdio.h>
+#include "Array.h"
+
+// 数组输出函数的内部实现
+static void Print(Array A, int dim, int index[]) {
+    int i;
+    int start;
+    
+    if(dim == A.dim) {
+        start = 0;
+        
+        // 计算本次遍历的起始元素位置
+        for(i = 0; i < dim - 1; i++) {
+            start += index[i] * A.constants[i];
+        }
+        
+        // 遍历最后一个维度内的元素
+        for(i = 0; i < A.bounds[dim - 1]; i++) {
+            printf("%d ", A.base[start + i]);
+        }
+    } else {
+        
+        for(i = 0; i < A.bounds[dim - 1]; i++) {
+            printf("<");
+            
+            // 索引轮转
+            index[dim - 1] = (index[dim - 1] + 1 + A.bounds[dim - 1]) % A.bounds[dim - 1];
+            
+            Print(A, dim + 1, index);
+            
+            printf(">");
+        }
+    }
+}
+
+// 按行依次输出数组中内容
+static void ArrayPrint(Array A) {
+    int i;
+    int* index;
+    
+    // 在遍历数组元素时，记录每个元素的索引（只记录前dim-1维）
+    index = (int*) malloc((A.dim - 1) * sizeof(int));
+    for(i = 0; i < A.dim - 1; i++) {
+        index[i] = -1;
+    }
+    
+    Print(A, 1, index);
+    
+    printf("\n");
+}
+
+
+/* 以三维数组为例测试 */
+int main(int argc, char** argv) {
+    Array A;
+    
+    printf("████████ 函数 InitArray （以三维数组为例）\n");
+    {
+        printf("█ 初始化一个维度为<2,3,4>的三维数组 A ...\n");
+        InitArray(&A, 3, 2, 3, 4);
+    }
+    PressEnterToContinue(debug);
+    
+    
+    printf("████████ 函数 Assign \n");
+    {
+        int i, j, k;
+        ElemType e = 0;
+        
+        for(i = 0; i < A.bounds[0]; i++) {
+            for(j = 0; j < A.bounds[1]; j++) {
+                for(k = 0; k < A.bounds[2]; k++) {
+                    printf("█ 赋值：A[%d][%d][%d] = %d\n", i, j, k, ++e);
+                    Assign(&A, e, i, j, k);
+                }
+            }
+        }
+        printf("█ A = ");
+        ArrayPrint(A);
+    }
+    PressEnterToContinue(debug);
+    
+    
+    printf("████████ 函数 Value \n");
+    {
+        ElemType x;
+        
+        printf("█ 获取 A 中下标为 (1,1,1) 的元素的值，Locate 用于求出 A[1][1][1] 的相对位置...\n");
+        Value(A, &x, 1, 1, 1);
+        printf("█ A[1][1][1] = %d\n", x);
+    }
+    PressEnterToContinue(debug);
+    
+    
+    printf("████████ 函数 DestroyArray \n");
+    {
+        printf("█ 销毁 A 前：");
+        A.dim != 0 ? printf(" A 存在！\n") : printf(" A 不存在！！\n");
+        
+        DestroyArray(&A);
+        
+        printf("█ 销毁 A 后：");
+        A.dim != 0 ? printf(" A 存在！\n") : printf(" A 不存在！！\n");
+    }
+    PressEnterToContinue(debug);
+    
+    
+    return 0;
+}
+
+TSMatrix.h
+/*=======================
+ * 三元组顺序表（稀疏矩阵）
+ *
+ * 包含算法: 5.1、5.2
+ ========================*/
+
+#ifndef TSMATRIX_H
+#define TSMATRIX_H
+
+#include <stdio.h>
+#include <stdlib.h>     // 提供 malloc 原型
+#include <string.h>     // 提供 strstr 原型
+#include "Status.h"
+
+/* 宏定义 */
+#define MAXSIZE 12500   // 非零元数量的最大值
+
+/* 三元组稀疏矩阵元素类型 */
+typedef int ElemType;
+
+/* 三元组类型定义，主要用来存储非零元 */
+typedef struct {
+    int i, j;       // 该三元组非零元的行下标和列下标
+    ElemType e;
+} Triple;
+
+/* 三元组稀疏矩阵类型定义 */
+typedef struct {
+    Triple data[MAXSIZE + 1];   // 非零元三元组表，data[0]未用
+    int mu, nu, tu;             // 矩阵的行数、列数和非零元个数
+} TSMatrix;
+
+
+/*
+ * 创建稀疏矩阵M
+ *
+ *
+ *【备注】
+ *
+ * 教材中默认从控制台读取数据。
+ * 这里为了方便测试，避免每次运行都手动输入数据，
+ * 因而允许选择从预设的文件path中读取测试数据。
+ *
+ * 如果需要从控制台读取数据，则path为NULL或者为空串，
+ * 如果需要从文件中读取数据，则需要在path中填写文件名信息。
+ */
+Status CreateSMatrix(TSMatrix* M, char* path);
+
+/*
+ * 销毁稀疏矩阵
+ *
+ *【注】
+ * 三元组顺序表的结构无法销毁。
+ */
+Status DestroySMatrix(TSMatrix* M);
+
+/*
+ * 矩阵复制
+ *
+ * 创建一个新矩阵T，该矩阵包含了从矩阵M中包含的数据。
+ */
+Status CopySMatrix(TSMatrix M, TSMatrix* T);
+
+/*
+ * 矩阵加法
+ *
+ * Q = M + N。
+ */
+Status AddSMatrix(TSMatrix M, TSMatrix N, TSMatrix* Q);
+
+/*
+ * 矩阵减法
+ *
+ * Q = M - N。
+ */
+Status SubSMatrix(TSMatrix M, TSMatrix N, TSMatrix* Q);
+
+/*
+ * 矩阵乘法
+ *
+ * Q = M * N，这里实现的是传统矩阵乘法。
+ */
+Status MultSMatrix(TSMatrix M, TSMatrix N, TSMatrix* Q);
+
+/*
+ * ████████ 算法5.1 ████████
+ *
+ * 矩阵转置
+ */
+Status TransposeSMatrix(TSMatrix M, TSMatrix* T);
+
+/*
+ * ████████ 算法5.2 ████████
+ *
+ * 矩阵快速转置
+ */
+Status FastTransposeSMatrix(TSMatrix M, TSMatrix* T);
+
+/*
+ * 输出矩阵
+ */
+void PrintSMatrix(TSMatrix M);
+
+#endif
+
+TSMatrix.c
+/*=======================
+ * 三元组顺序表（稀疏矩阵）
+ *
+ * 包含算法: 5.1、5.2
+ ========================*/
+
+#include "TSMatrix.h"
+
+/*
+ * 创建稀疏矩阵M
+ *
+ *
+ *【备注】
+ *
+ * 教材中默认从控制台读取数据。
+ * 这里为了方便测试，避免每次运行都手动输入数据，
+ * 因而允许选择从预设的文件path中读取测试数据。
+ *
+ * 如果需要从控制台读取数据，则path为NULL或者为空串，
+ * 如果需要从文件中读取数据，则需要在path中填写文件名信息。
+ */
+Status CreateSMatrix(TSMatrix* M, char* path) {
+    int k;
+    FILE* fp;
+    int readFromConsole;    // 是否从控制台读取数据
+    
+    // 如果没有文件路径信息，则从控制台读取输入
+    readFromConsole = path == NULL || strcmp(path, "") == 0;
+    
+    // 如果没有文件路径信息，则从控制台读取输入
+    if(readFromConsole) {
+        printf("请输入行数：");
+        scanf("%d", &((*M).mu));
+        printf("请输入列数：");
+        scanf("%d", &((*M).nu));
+        printf("请输入非零元素个数：");
+        scanf("%d", &((*M).tu));
+        printf("请输入%d个三元组信息\n", (*M).tu);
+        for(k = 1; k <= (*M).tu; k++) {
+            printf("第%2d组：", k);
+            scanf("%d%d%d", &((*M).data[k].i), &((*M).data[k].j), &((*M).data[k].e));
+        }
+    } else {
+        fp = fopen(path, "r");
+        
+        ReadData(fp, "%d%d%d", &((*M).mu), &((*M).nu), &((*M).tu));
+        
+        for(k = 1; k <= (*M).tu; k++) {
+            ReadData(fp, "%d%d%d", &((*M).data[k].i), &((*M).data[k].j), &((*M).data[k].e));
+        }
+        
+        fclose(fp);
+    }
+    
+    return OK;
+}
+
+/*
+ * 销毁稀疏矩阵
+ *
+ *【注】
+ * 三元组顺序表的结构无法销毁。
+ */
+Status DestroySMatrix(TSMatrix* M) {
+    if(M == NULL) {
+        return ERROR;
+    }
+    
+    (*M).mu = 0;
+    (*M).nu = 0;
+    (*M).tu = 0;
+    
+    return OK;
+}
+
+/*
+ * 矩阵复制
+ *
+ * 创建一个新矩阵T，该矩阵包含了从矩阵M中包含的数据。
+ */
+Status CopySMatrix(TSMatrix M, TSMatrix* T) {
+    (*T) = M;   // 结构体之间可以直接复制，即使内部包含数组也可以
+    
+    return OK;
+}
+
+/*
+ * 矩阵加法
+ *
+ * Q = M + N。
+ */
+Status AddSMatrix(TSMatrix M, TSMatrix N, TSMatrix* Q) {
+    int m, n, k;
+    
+    if(M.mu != N.mu || M.nu != N.nu) {
+        printf("两矩阵的行数、列数不满足相加条件！！\n");
+        return ERROR;
+    }
+    
+    // 初始化Q
+    (*Q).mu = M.mu;
+    (*Q).nu = M.nu;
+    (*Q).tu = 0;
+    
+    m = n = k = 1;
+    
+    // 依次遍历M与N的三元组
+    while(m <= M.tu && n <= N.tu) {
+        // M中的三元组行下标较小
+        if(M.data[m].i < N.data[n].i) {
+            (*Q).data[k] = M.data[m];
+            m++;
+            
+            // N中的三元组行下标较小
+        } else if(M.data[m].i > N.data[n].i) {
+            (*Q).data[k] = N.data[n];
+            n++;
+            
+            // M与N中的三元组行下标一致，需要进一步比较列坐标
+        } else {
+            // M中的三元组列下标较小
+            if(M.data[m].j < N.data[n].j) {
+                (*Q).data[k] = M.data[m];
+                m++;
+                
+                // N中的三元组列下标较小
+            } else if(M.data[m].j > N.data[n].j) {
+                (*Q).data[k] = N.data[n];
+                n++;
+                
+                // M与N中的三元组列下标一致，需要进行加法运算
+            } else {
+                // 值已经加为0的话，不需要存储该元素
+                if((M.data[m].e + N.data[n].e) == 0) {
+                    m++;
+                    n++;
+                    continue;
+                } else {
+                    (*Q).data[k].i = M.data[m].i;
+                    (*Q).data[k].j = M.data[m].j;
+                    (*Q).data[k].e = M.data[m].e + N.data[n].e;
+                    m++;
+                    n++;
+                }
+            }
+        }
+        
+        k++;
+        (*Q).tu++;
+    }
+    
+    // 遍历M中剩余的三元组
+    while(m <= M.tu) {
+        (*Q).data[k] = M.data[m];
+        m++;
+        k++;
+        (*Q).tu++;
+    }
+    
+    // 遍历N中剩余的三元组
+    while(n <= N.tu) {
+        (*Q).data[k] = N.data[n];
+        n++;
+        k++;
+        (*Q).tu++;
+    }
+    
+    return OK;
+}
+
+/*
+ * 矩阵减法
+ *
+ * Q = M - N。
+ */
+Status SubSMatrix(TSMatrix M, TSMatrix N, TSMatrix* Q) {
+    int m, n, k;
+    
+    if(M.mu != N.mu || M.nu != N.nu) {
+        printf("两矩阵的行数、列数不满足相减条件！！\n");
+        return ERROR;
+    }
+    
+    // 初始化Q
+    (*Q).mu = M.mu;
+    (*Q).nu = M.nu;
+    (*Q).tu = 0;
+    
+    m = n = k = 1;
+    
+    // 依次遍历M与N的三元组
+    while(m <= M.tu && n <= N.tu) {
+        // M中的三元组行下标较小
+        if(M.data[m].i < N.data[n].i) {
+            (*Q).data[k] = M.data[m];
+            m++;
+            
+            // N中的三元组行下标较小
+        } else if(M.data[m].i > N.data[n].i) {
+            (*Q).data[k].i = N.data[n].i;
+            (*Q).data[k].j = N.data[n].j;
+            (*Q).data[k].e = -N.data[n].e;  // 由于是相减，所以要对元素值取相反数
+            n++;
+            
+            // M与N中的三元组行下标一致，需要进一步比较列坐标
+        } else {
+            // M中的三元组列下标较小
+            if(M.data[m].j < N.data[n].j) {
+                (*Q).data[k] = M.data[m];
+                m++;
+                
+                // N中的三元组列下标较小
+            } else if(M.data[m].j > N.data[n].j) {
+                (*Q).data[k].i = N.data[n].i;
+                (*Q).data[k].j = N.data[n].j;
+                (*Q).data[k].e = -N.data[n].e;  // 由于是相减，所以要对元素值取相反数
+                n++;
+                
+                // M与N中的三元组列下标一致，需要进行减法运算
+            } else {
+                // 值已经减为0的话，不需要存储该元素
+                if((M.data[m].e - N.data[n].e) == 0) {
+                    m++;
+                    n++;
+                    continue;
+                } else {
+                    (*Q).data[k].i = M.data[m].i;
+                    (*Q).data[k].j = M.data[m].j;
+                    (*Q).data[k].e = M.data[m].e - N.data[n].e;
+                    m++;
+                    n++;
+                }
+            }
+        }
+        
+        k++;
+        (*Q).tu++;
+    }
+    
+    // 遍历M中剩余的三元组
+    while(m <= M.tu) {
+        (*Q).data[k] = M.data[m];
+        m++;
+        k++;
+        (*Q).tu++;
+    }
+    
+    // 遍历N中剩余的三元组
+    while(n <= N.tu) {
+        (*Q).data[k].i = N.data[n].i;
+        (*Q).data[k].j = N.data[n].j;
+        (*Q).data[k].e = -N.data[n].e;
+        n++;
+        k++;
+        (*Q).tu++;
+    }
+    
+    return OK;
+}
+
+/*
+ * 矩阵乘法
+ *
+ * Q = M * N，这里实现的是传统矩阵乘法。
+ */
+Status MultSMatrix(TSMatrix M, TSMatrix N, TSMatrix* Q) {
+    int m, n, i, j, k;
+    ElemType c, c1, c2;
+    
+    // M的列数需要等于N的行数
+    if(M.nu != N.mu) {
+        printf("两矩阵的行数、列数不满足相乘条件！！\n");
+        return ERROR;
+    }
+    
+    // 初始化Q
+    (*Q).mu = M.mu;
+    (*Q).nu = N.nu;
+    (*Q).tu = 0;
+    
+    // 如果存在零矩阵
+    if(M.tu * N.tu == 0) {
+        return OK;
+    }
+    
+    // 遍历矩阵M的行
+    for(i = 1; i <= M.mu; i++) {
+        // 遍历矩阵N的列
+        for(j = 1; j <= N.nu; j++) {
+            c = 0;
+            for(k = 1; k <= M.nu; k++) {
+                // 记录M[i][k]的值
+                c1 = 0;
+                // 依次寻找位于指定位置的M三元组
+                for(m = 1; m <= M.tu; m++) {
+                    if(M.data[m].i == i && M.data[m].j == k) {
+                        c1 = M.data[m].e;
+                        break;
+                    }
+                }
+                
+                // 记录N[k][j]的值
+                c2 = 0;
+                //依次寻找位于指定位置的N三元组
+                for(n = 1; n <= N.tu; n++) {
+                    if(N.data[n].i == k && N.data[n].j == j) {
+                        c2 = N.data[n].e;
+                        break;
+                    }
+                }
+                
+                // 计算Q[i][j]的值
+                if(c1 && c2) {
+                    c += c1 * c2;
+                }
+            }
+            
+            // 如果计算结果不为0，则进行存储
+            if(c != 0) {
+                (*Q).tu++;
+                (*Q).data[(*Q).tu].i = i;
+                (*Q).data[(*Q).tu].j = j;
+                (*Q).data[(*Q).tu].e = c;
+            }
+        }
+    }
+    
+    return OK;
+}
+
+/*
+ * ████████ 算法5.1 ████████
+ *
+ * 矩阵转置
+ */
+Status TransposeSMatrix(TSMatrix M, TSMatrix* T) {
+    int p, q, col;
+    
+    (*T).mu = M.nu;
+    (*T).nu = M.mu;
+    (*T).tu = M.tu;
+    
+    if((*T).tu != 0) {
+        q = 1;  // q用于T中非零元的计数
+        
+        // col代表M的列，T的行
+        for(col = 1; col <= M.nu; ++col) {
+            // 在M中查找第j列的元素，依次将其转置到T中
+            for(p = 1; p <= M.tu; ++p) {
+                if(M.data[p].j == col) {
+                    (*T).data[q].i = M.data[p].j;    // M的列变为T的行
+                    (*T).data[q].j = M.data[p].i;    // M的行变为T的列
+                    (*T).data[q].e = M.data[p].e;    // 每个三元组值不变
+                    ++q;
+                }
+            }
+        }
+    }
+    
+    return OK;
+}
+
+/*
+ * ████████ 算法5.2 ████████
+ *
+ * 矩阵快速转置
+ */
+Status FastTransposeSMatrix(TSMatrix M, TSMatrix* T) {
+    int col, t, p, q;
+    int* num;       // num[col] 表示M第col列中非零元的个数
+    int* copt;      // copt[col]表示M第col列第一个非零元在转置后矩阵中的位置
+    
+    (*T).mu = M.nu;
+    (*T).nu = M.mu;
+    (*T).tu = M.tu;
+    
+    // 提前返回
+    if((*T).tu == 0) {
+        return ERROR;
+    }
+    
+    num  = (int*) malloc((M.nu + 1) * sizeof(int));
+    copt = (int*) malloc((M.nu + 1) * sizeof(int));
+    
+    // 初始化数组num
+    for(col = 1; col <= M.nu; ++col) {
+        num[col] = 0;
+    }
+    
+    // 统计M中的非零元，统计每列非零元的个数
+    for(t = 1; t <= M.tu; ++t) {
+        num[M.data[t].j]++;
+    }
+    
+    // 第1列第1个非零元总是位于转置后矩阵中的首位
+    copt[1] = 1;
+    // 计算各列第1个非零元在转置矩阵中的位置
+    for(col = 2; col <= M.nu; ++col) {
+        copt[col] = copt[col - 1] + num[col - 1];
+    }
+    
+    // 依次扫描M中的三元组
+    for(p = 1; p <= M.tu; ++p) {
+        col = M.data[p].j;                // 计算当前非零元所处的列
+        q = copt[col];                    // 计算当前非零元在转置矩阵中的位置
+        (*T).data[q].i = M.data[p].j;
+        (*T).data[q].j = M.data[p].i;
+        (*T).data[q].e = M.data[p].e;
+        ++copt[col];                      // 再遇到此列元素时，其在转置矩阵中的位置应当增一（该步骤很重要）
+    }
+    
+    return OK;
+}
+
+/*
+ * 输出矩阵
+ */
+void PrintSMatrix(TSMatrix M) {
+    int r, c;
+    int k = 1;
+    
+    for(r = 1; r <= M.mu; r++) {
+        for(c = 1; c <= M.nu; c++) {
+            if(r == M.data[k].i && c == M.data[k].j) {
+                printf("%3d ", M.data[k].e);
+                k++;
+            } else {
+                printf("%3d ", 0);
+            }
+        }
+        printf("\n");
+    }
+}
+
+TSMatrix_main.c
+#include <stdio.h>
+#include "TSMatrix.h"
+
+int main(int argc, char** argv) {
+    TSMatrix M, N;
+    
+    printf("████████ 函数 CreateSMatrix \n");
+    {
+        printf("█ 创建两个稀疏矩阵 M、N ...\n");
+        CreateSMatrix(&M, "TestData_M.txt");
+        CreateSMatrix(&N, "TestData_N.txt");
+    }
+    PressEnterToContinue(debug);
+    
+    
+    printf("████████ 函数 PrintSMatrix \n");
+    {
+        printf("█ M = \n");
+        PrintSMatrix(M);
+        
+        printf("█ N = \n");
+        PrintSMatrix(N);
+    }
+    PressEnterToContinue(debug);
+    
+    
+    printf("████████ 函数 CopySMatrix \n");
+    {
+        TSMatrix Tmp;
+        
+        printf("█ 复制 M 到 Tmp...\n");
+        CopySMatrix(M, &Tmp);
+        
+        printf("█ Tmp = \n");
+        PrintSMatrix(Tmp);
+    }
+    PressEnterToContinue(debug);
+    
+    
+    printf("████████ 函数 AddSMatrix \n");
+    {
+        TSMatrix Q1;
+        
+        AddSMatrix(M, N, &Q1);
+        
+        printf("█ Q1 = M + N = \n");
+        PrintSMatrix(Q1);
+    }
+    PressEnterToContinue(debug);
+    
+    
+    printf("████████ 函数 SubSMatrix \n");
+    {
+        TSMatrix Q2;
+        
+        SubSMatrix(M, N, &Q2);
+        
+        printf("█ Q2 = M - N = \n");
+        PrintSMatrix(Q2);
+    }
+    PressEnterToContinue(debug);
+    
+    
+    printf("████████ 函数 MultSMatrix \n");
+    {
+        TSMatrix Q3;
+        
+        MultSMatrix(M, N, &Q3);
+        
+        printf("█ Q3 = M * N = \n");
+        PrintSMatrix(Q3);
+    }
+    PressEnterToContinue(debug);
+    
+    
+    printf("████████ 函数 TransposeSMatrix \n");
+    {
+        TSMatrix T1;
+        
+        TransposeSMatrix(M, &T1);
+        
+        printf("█ T1 = M(T) = \n");
+        PrintSMatrix(T1);
+    }
+    PressEnterToContinue(debug);
+    
+    
+    printf("████████ 函数 FastTransposeSMatrix \n");
+    {
+        TSMatrix T2;
+        
+        FastTransposeSMatrix(M, &T2);
+        
+        printf("█ T2 = M(T) = \n");
+        PrintSMatrix(T2);
+    }
+    PressEnterToContinue(debug);
+    
+    
+    printf("████████ 函数 DestroySMatrix \n");
+    {
+        printf("█ 销毁 M 前：");
+        !M.mu && !M.nu && !M.tu ? printf(" M 不存在！！\n") : printf(" M 存在！\n");
+        
+        DestroySMatrix(&M);
+        
+        printf("█ 销毁 M 后：");
+        !M.mu && !M.nu && !M.tu ? printf(" M 不存在！！\n") : printf(" M 存在！\n");
+    }
+    PressEnterToContinue(debug);
+    
+    return 0;
+}
+
+RLSMatrix.h
+/*=============================
+ * 行逻辑链接的顺序表（稀疏矩阵）
+ *
+ * 包含算法: 5.3
+ ==============================*/
+
+#ifndef RLSMATRIX_H
+#define RLSMATRIX_H
+
+#include <stdio.h>
+#include <stdlib.h>     // 提供 malloc 原型
+#include <string.h>     // 提供 strstr 原型
+#include "Status.h"
+
+/* 宏定义 */
+#define MAXSIZE 12500   // 非零元数量的最大值
+#define MAXRC      32   // 行数的最大值
+
+/* 行逻辑链接的稀疏矩阵元素类型 */
+typedef int ElemType;
+
+/* 三元组类型定义，主要用来存储非零元 */
+typedef struct {
+    int i, j;       // 该非零元的行下标和列下标
+    ElemType e;
+} Triple;
+
+/* 行逻辑链接的稀疏矩阵类型定义 */
+typedef struct {
+    Triple data[MAXSIZE + 1];   // 非零元三元组表，data[0]未用
+    int rpos[MAXRC + 1];        // 各行第一个非零元在三元组表中的位置表，rpos[0]未用
+    int mu, nu, tu;             // 矩阵的行数、列数和非零元个数
+} RLSMatrix;
+
+
+/*
+ * 创建稀疏矩阵M
+ *
+ *
+ *【备注】
+ *
+ * 教材中默认从控制台读取数据。
+ * 这里为了方便测试，避免每次运行都手动输入数据，
+ * 因而允许选择从预设的文件path中读取测试数据。
+ *
+ * 如果需要从控制台读取数据，则path为NULL或者为空串，
+ * 如果需要从文件中读取数据，则需要在path中填写文件名信息。
+ */
+Status CreateSMatrix(RLSMatrix* M, char* path);
+
+/*
+ * 销毁稀疏矩阵
+ *
+ *【注】
+ * 行逻辑链接的顺序表结构无法销毁。
+ */
+Status DestroySMatrix(RLSMatrix* M);
+
+/*
+ * 矩阵复制
+ *
+ * 创建一个新矩阵T，该矩阵包含了从矩阵M中包含的数据。
+ */
+Status CopySMatrix(RLSMatrix M, RLSMatrix* T);
+
+/*
+ * 矩阵加法
+ *
+ * Q = M + N。
+ */
+Status AddSMatrix(RLSMatrix M, RLSMatrix N, RLSMatrix* Q);
+
+/*
+ * 矩阵减法
+ *
+ * Q = M - N。
+ */
+Status SubSMatrix(RLSMatrix M, RLSMatrix N, RLSMatrix* Q);
+
+/*
+ * ████████ 算法5.3 ████████
+ *
+ * 矩阵乘法
+ *
+ * Q = M * N。
+ */
+Status MultSMatrix(RLSMatrix M, RLSMatrix N, RLSMatrix* Q);
+
+/*
+ * 矩阵转置
+ */
+Status TransposeSMatrix(RLSMatrix M, RLSMatrix* T);
+
+/*
+ * 矩阵快速转置
+ */
+Status FastTransposeSMatrix(RLSMatrix M, RLSMatrix* T);
+
+/*
+ * 输出矩阵
+ */
+void PrintSMatrix(RLSMatrix M);
+
+// 为rpos数组赋值
+static void AssignRpos(RLSMatrix* M);
+
+#endif
+
+RLSMatrix.c
+/*=============================
+ * 行逻辑链接的顺序表（稀疏矩阵）
+ *
+ * 包含算法: 5.3
+ ==============================*/
+
+#include "RLSMatrix.h"
+
+/*
+ * 创建稀疏矩阵M
+ *
+ *
+ *【备注】
+ *
+ * 教材中默认从控制台读取数据。
+ * 这里为了方便测试，避免每次运行都手动输入数据，
+ * 因而允许选择从预设的文件path中读取测试数据。
+ *
+ * 如果需要从控制台读取数据，则path为NULL或者为空串，
+ * 如果需要从文件中读取数据，则需要在path中填写文件名信息。
+ */
+Status CreateSMatrix(RLSMatrix* M, char* path) {
+    int k;
+    FILE* fp;
+    int readFromConsole;    // 是否从控制台读取数据
+    
+    // 如果没有文件路径信息，则从控制台读取输入
+    readFromConsole = path == NULL || strcmp(path, "") == 0;
+    
+    // 如果没有文件路径信息，则从控制台读取输入
+    if(readFromConsole) {
+        printf("请输入行数：");
+        scanf("%d", &((*M).mu));
+        printf("请输入列数：");
+        scanf("%d", &((*M).nu));
+        printf("请输入非零元素个数：");
+        scanf("%d", &((*M).tu));
+        printf("请输入%d个三元组信息\n", (*M).tu);
+        for(k = 1; k <= (*M).tu; k++) {
+            printf("第%2d组：", k);
+            scanf("%d%d%d", &((*M).data[k].i), &((*M).data[k].j), &((*M).data[k].e));
+        }
+    } else {
+        fp = fopen(path, "r");
+        
+        ReadData(fp, "%d%d%d", &((*M).mu), &((*M).nu), &((*M).tu));
+        
+        for(k = 1; k <= (*M).tu; k++) {
+            ReadData(fp, "%d%d%d", &((*M).data[k].i), &((*M).data[k].j), &((*M).data[k].e));
+        }
+        
+        fclose(fp);
+    }
+    
+    // 为rpos数组赋值
+    AssignRpos(M);
+    
+    return OK;
+}
+
+/*
+ * 销毁稀疏矩阵
+ *
+ *【注】
+ * 行逻辑链接的顺序表结构无法销毁。
+ */
+Status DestroySMatrix(RLSMatrix* M) {
+    int i;
+    
+    if(M == NULL) {
+        return ERROR;
+    }
+    
+    M->mu = 0;
+    M->nu = 0;
+    M->tu = 0;
+    
+    for(i = 0; i <= MAXRC; ++i) {
+        M->rpos[i] = 0;
+    }
+    
+    return OK;
+}
+
+/*
+ * 矩阵复制
+ *
+ * 创建一个新矩阵T，该矩阵包含了从矩阵M中包含的数据。
+ */
+Status CopySMatrix(RLSMatrix M, RLSMatrix* T) {
+    (*T) = M;   // 结构体之间可以直接复制，即使内部包含数组也可以
+    
+    return OK;
+}
+
+/*
+ * 矩阵加法
+ *
+ * Q = M + N。
+ */
+Status AddSMatrix(RLSMatrix M, RLSMatrix N, RLSMatrix* Q) {
+    int m, n, k;
+    
+    if(M.mu != N.mu || M.nu != N.nu) {
+        printf("两矩阵的行数、列数不满足相加条件！！\n");
+        return ERROR;
+    }
+    
+    // 初始化Q的行列信息
+    (*Q).mu = M.mu;
+    (*Q).nu = M.nu;
+    (*Q).tu = 0;
+    
+    m = n = k = 1;
+    
+    // 依次遍历M与N的三元组
+    while(m <= M.tu && n <= N.tu) {
+        // M中的三元组行下标较小
+        if(M.data[m].i < N.data[n].i) {
+            (*Q).data[k] = M.data[m];
+            m++;
+            
+            // N中的三元组行下标较小
+        } else if(M.data[m].i > N.data[n].i) {
+            (*Q).data[k] = N.data[n];
+            n++;
+            
+            // M与N中的三元组行下标一致，需要进一步比较列坐标
+        } else {
+            // M中的三元组列下标较小
+            if(M.data[m].j < N.data[n].j) {
+                (*Q).data[k] = M.data[m];
+                m++;
+                
+                // N中的三元组列下标较小
+            } else if(M.data[m].j > N.data[n].j) {
+                (*Q).data[k] = N.data[n];
+                n++;
+                
+                // M与N中的三元组列下标一致，需要进行加法运算
+            } else {
+                // 值已经加为0的话，不需要存储该元素
+                if((M.data[m].e + N.data[n].e) == 0) {
+                    m++;
+                    n++;
+                    continue;
+                } else {
+                    (*Q).data[k].i = M.data[m].i;
+                    (*Q).data[k].j = M.data[m].j;
+                    (*Q).data[k].e = M.data[m].e + N.data[n].e;
+                    m++;
+                    n++;
+                }
+            }
+        }
+        
+        k++;
+        (*Q).tu++;
+    }
+    
+    // 遍历M中剩余的三元组
+    while(m <= M.tu) {
+        (*Q).data[k] = M.data[m];
+        m++;
+        k++;
+        (*Q).tu++;
+    }
+    
+    // 遍历N中剩余的三元组
+    while(n <= N.tu) {
+        (*Q).data[k] = N.data[n];
+        n++;
+        k++;
+        (*Q).tu++;
+    }
+    
+    // 为rpos数组赋值
+    AssignRpos(Q);
+    
+    return OK;
+}
+
+/*
+ * 矩阵减法
+ *
+ * Q = M - N。
+ */
+Status SubSMatrix(RLSMatrix M, RLSMatrix N, RLSMatrix* Q) {
+    int m, n, k;
+    
+    if(M.mu != N.mu || M.nu != N.nu) {
+        printf("两矩阵的行数、列数不满足相减条件！！\n");
+        return ERROR;
+    }
+    
+    // 初始化Q的行列信息
+    (*Q).mu = M.mu;
+    (*Q).nu = M.nu;
+    (*Q).tu = 0;
+    
+    m = n = k = 1;
+    
+    // 依次遍历M与N的三元组
+    while(m <= M.tu && n <= N.tu) {
+        // M中的三元组行下标较小
+        if(M.data[m].i < N.data[n].i) {
+            (*Q).data[k] = M.data[m];
+            m++;
+            
+            // N中的三元组行下标较小
+        } else if(M.data[m].i > N.data[n].i) {
+            (*Q).data[k].i = N.data[n].i;
+            (*Q).data[k].j = N.data[n].j;
+            (*Q).data[k].e = -N.data[n].e;  // 由于是相减，所以要对元素值取相反数
+            n++;
+            
+            // M与N中的三元组行下标一致，需要进一步比较列坐标
+        } else {
+            // M中的三元组列下标较小
+            if(M.data[m].j < N.data[n].j) {
+                (*Q).data[k] = M.data[m];
+                m++;
+                
+                // N中的三元组列下标较小
+            } else if(M.data[m].j > N.data[n].j) {
+                (*Q).data[k].i = N.data[n].i;
+                (*Q).data[k].j = N.data[n].j;
+                (*Q).data[k].e = -N.data[n].e;  // 由于是相减，所以要对元素值取相反数
+                n++;
+                
+                // M与N中的三元组列下标一致，需要进行减法运算
+            } else {
+                // 值已经减为0的话，不需要存储该元素
+                if((M.data[m].e - N.data[n].e) == 0) {
+                    m++;
+                    n++;
+                    continue;
+                } else {
+                    (*Q).data[k].i = M.data[m].i;
+                    (*Q).data[k].j = M.data[m].j;
+                    (*Q).data[k].e = M.data[m].e - N.data[n].e;
+                    m++;
+                    n++;
+                }
+            }
+        }
+        
+        k++;
+        (*Q).tu++;
+    }
+    
+    // 遍历M中剩余的三元组
+    while(m <= M.tu) {
+        (*Q).data[k] = M.data[m];
+        m++;
+        k++;
+        (*Q).tu++;
+    }
+    
+    // 遍历N中剩余的三元组
+    while(n <= N.tu) {
+        (*Q).data[k].i = N.data[n].i;
+        (*Q).data[k].j = N.data[n].j;
+        (*Q).data[k].e = -N.data[n].e;
+        n++;
+        k++;
+        (*Q).tu++;
+    }
+    
+    // 为rpos数组赋值
+    AssignRpos(Q);
+    
+    return OK;
+}
+
+/*
+ * ████████ 算法5.3 ████████
+ *
+ * 矩阵乘法
+ *
+ * Q = M * N。
+ */
+Status MultSMatrix(RLSMatrix M, RLSMatrix N, RLSMatrix* Q) {
+    int arow, p, tp;
+    int brow, q, tq;
+    int ccol;
+    int* ctemp;    // Q中各行元素值累加器，ctemp[0]单元弃用
+    int i;
+    
+    // M的列数需要等于N的行数
+    if(M.nu != N.mu) {
+        printf("两矩阵的行数、列数不满足相乘条件！！\n");
+        return ERROR;
+    }
+    
+    // 初始化Q的行列信息
+    (*Q).mu = M.mu;
+    (*Q).nu = N.nu;
+    (*Q).tu = 0;
+    
+    // 如果存在零矩阵
+    if(M.tu * N.tu == 0) {
+        return OK;
+    }
+    
+    ctemp = (int*) malloc((N.nu + 1) * sizeof(int));
+    
+    // 处理M的每一行
+    for(arow = 1; arow <= M.mu; ++arow) {
+        // 初始化Q中行元素值计数器
+        for(i = 0; i <= N.nu; ++i) {
+            ctemp[i] = 0;
+        }
+        
+        // tp指向M当前行的下一行第一个非零元位置
+        if(arow < M.mu) {
+            tp = M.rpos[arow + 1];
+        } else {
+            tp = M.tu + 1;
+        }
+        
+        // 遍历M中arow行的所有非零元
+        for(p = M.rpos[arow]; p < tp; ++p) {
+            // 获取该非零元在N中的行号
+            brow = M.data[p].j;
+    
+            // tq指向N当前行的下一行第一个非零元位置
+            if(brow < N.mu) {
+                tq = N.rpos[brow + 1];
+            } else {
+                tq = N.tu + 1;
+            }
+    
+            // 遍历N中brow行的所有非零元
+            for(q = N.rpos[brow]; q < tq; ++q) {
+                // 乘积元素在Q中的列号
+                ccol = N.data[q].j;
+                
+                // 累加乘积
+                ctemp[ccol] += M.data[p].e * N.data[q].e;
+            }
+        }
+    
+        /*
+         * 至此，Q中第arow行元素已求出
+         */
+        
+        // 遍历计算后的乘积，选取非零元存入Q中
+        for(ccol = 1; ccol <= (*Q).nu; ++ccol) {
+            // 若Q中第arow行ccol列元素不为0
+            if(ctemp[ccol]) {
+                ++(*Q).tu;
+                
+                // 非零元个数超出限制
+                if((*Q).tu > MAXSIZE) {
+                    return ERROR;
+                }
+                
+                (*Q).data[(*Q).tu].i = arow;
+                (*Q).data[(*Q).tu].j = ccol;
+                (*Q).data[(*Q).tu].e = ctemp[ccol];
+            }
+        }
+    }
+    
+    // 为rpos数组赋值
+    AssignRpos(Q);
+    
+    return OK;
+}
+
+/*
+ * 矩阵转置
+ */
+Status TransposeSMatrix(RLSMatrix M, RLSMatrix* T) {
+    int p, q, col;
+    
+    (*T).mu = M.nu;
+    (*T).nu = M.mu;
+    (*T).tu = M.tu;
+    
+    if((*T).tu) {
+        q = 1;  // q用于T中非零元的计数
+        
+        // col代表M的列，T的行
+        for(col = 1; col <= M.nu; ++col) {
+            // 在M中查找第j列的元素，依次将其转置到T中
+            for(p = 1; p <= M.tu; ++p) {
+                if(M.data[p].j == col) {
+                    (*T).data[q].i = M.data[p].j;     // M的列变为T的行
+                    (*T).data[q].j = M.data[p].i;     // M的行变为T的列
+                    (*T).data[q].e = M.data[p].e;     // 每个三元组值不变
+                    
+                    ++q;
+                }
+            }
+        }
+    }
+    
+    // 为rpos数组赋值
+    AssignRpos(T);
+    
+    return OK;
+}
+
+/*
+ * 矩阵快速转置
+ */
+Status FastTransposeSMatrix(RLSMatrix M, RLSMatrix* T) {
+    int col, t, p, q;
+    int* num;      // num[col] 表示M第col列中非零元的个数
+    int* copt;     // copt[col]表示M第col列第一个非零元在转置后矩阵中的位置
+    
+    (*T).mu = M.nu;
+    (*T).nu = M.mu;
+    (*T).tu = M.tu;
+    
+    // 提前返回
+    if((*T).tu == 0) {
+        return ERROR;
+    }
+    
+    num  = (int*) malloc((M.nu + 1) * sizeof(int));
+    copt = (int*) malloc((M.nu + 1) * sizeof(int));
+    
+    // 初始化数组num
+    for(col = 1; col <= M.nu; ++col) {
+        num[col] = 0;
+    }
+    
+    // 统计M中的非零元，统计每列非零元的个数
+    for(t = 1; t <= M.tu; ++t) {
+        num[M.data[t].j]++;
+    }
+    
+    // 第1列第1个非零元总是位于转置后矩阵中的首位
+    copt[1] = 1;
+    // 计算各列第1个非零元在转置矩阵中的位置
+    for(col = 2; col <= M.nu; ++col) {
+        copt[col] = copt[col - 1] + num[col - 1];
+    }
+    
+    // 依次扫描M中的三元组
+    for(p = 1; p <= M.tu; ++p) {
+        col = M.data[p].j;              // 计算当前非零元所处的列
+        q = copt[col];                  // 计算当前非零元在转置矩阵中的位置
+        (*T).data[q].i = M.data[p].j;
+        (*T).data[q].j = M.data[p].i;
+        (*T).data[q].e = M.data[p].e;
+        ++copt[col];                    // 再遇到此列元素时，其在转置矩阵中的位置应当增一（该步骤很重要）
+    }
+    
+    // 为rpos数组赋值
+    AssignRpos(T);
+    
+    return OK;
+}
+
+/*
+ * 输出矩阵
+ */
+void PrintSMatrix(RLSMatrix M) {
+    int r, c;
+    int k = 1;
+    
+    for(r = 1; r <= M.mu; ++r) {
+        for(c = 1; c <= M.nu; ++c) {
+            if(r == M.data[k].i && c == M.data[k].j) {
+                printf("%3d ", M.data[k].e);
+                k++;
+            } else {
+                printf("%3d ", 0);
+            }
+        }
+        printf("\n");
+    }
+    
+    printf("rpos = ");
+    for(k = 1; k <= M.mu; ++k) {
+        printf("%d ", M.rpos[k]);
+    }
+    printf("\n");
+}
+
+// 为rpos数组赋值
+static void AssignRpos(RLSMatrix* M) {
+    int k, m;
+    
+    // 初始化数组rpos
+    for(k = 0; k <= MAXRC; ++k) {
+        (*M).rpos[k] = 0;
+    }
+    
+    for(k = 1; k <= (*M).tu; k++) {
+        m = (*M).data[k].i;     // 当前三元组元素在矩阵中的行位置
+        
+        // 记录每行第一个非零元的在三元组表中的位置
+        if((*M).rpos[m] == 0) {
+            (*M).rpos[m] = k;   // 只会在当前行有非零元的情况下记录
+        }
+    }
+    
+    // 处理那些没有非零元的行
+    for(k = (*M).mu; k >= 1; k--) {
+        // 如果当前行没有非零元，则此处会直接取用下一行的参数
+        if((*M).rpos[k] == 0) {
+            // 如果是最后一行无非零元，因为已经不存在下一行了，所以需特殊处理
+            if(k == (*M).mu) {
+                (*M).rpos[k] = (*M).tu + 1;
+            } else {
+                (*M).rpos[k] = (*M).rpos[k + 1];
+            }
+        }
+    }
+}
+
+RLSMatrix_main.c
+#include <stdio.h>
+#include "RLSMatrix.h"
+
+int main(int argc, char** argv) {
+    RLSMatrix M, N;
+    
+    printf("████████ 函数 CreateSMatrix \n");
+    {
+        printf("█ 创建两个稀疏矩阵 M、N ...\n");
+        CreateSMatrix(&M, "TestData_M.txt");
+        CreateSMatrix(&N, "TestData_N.txt");
+    }
+    PressEnterToContinue(debug);
+    
+    
+    printf("████████ 函数 PrintSMatrix \n");
+    {
+        printf("█ M = \n");
+        PrintSMatrix(M);
+        
+        printf("█ N = \n");
+        PrintSMatrix(N);
+    }
+    PressEnterToContinue(debug);
+    
+    
+    printf("████████ 函数 CopySMatrix \n");
+    {
+        RLSMatrix Tmp;
+        
+        printf("█ 复制 M 到 Tmp...\n");
+        CopySMatrix(M, &Tmp);
+        
+        printf("█ Tmp = \n");
+        PrintSMatrix(Tmp);
+    }
+    PressEnterToContinue(debug);
+    
+    
+    printf("████████ 函数 AddSMatrix \n");
+    {
+        RLSMatrix Q1;
+        
+        AddSMatrix(M, N, &Q1);
+        
+        printf("█ Q1 = M + N = \n");
+        PrintSMatrix(Q1);
+    }
+    PressEnterToContinue(debug);
+    
+    
+    printf("████████ 函数 SubtSMatrix \n");
+    {
+        RLSMatrix Q2;
+        
+        SubSMatrix(M, N, &Q2);
+        
+        printf("█ Q2 = M - N = \n");
+        PrintSMatrix(Q2);
+    }
+    PressEnterToContinue(debug);
+    
+    
+    printf("████████ 函数 MultSMatrix \n");
+    {
+        RLSMatrix Q3;
+        
+        MultSMatrix(M, N, &Q3);
+        
+        printf("█ Q3 = M * N = \n");
+        PrintSMatrix(Q3);
+    }
+    PressEnterToContinue(debug);
+    
+    
+    printf("████████ 函数 TransposeSMatrix \n");
+    {
+        RLSMatrix T1;
+        
+        TransposeSMatrix(M, &T1);
+        
+        printf("█ T1 = M(T) = \n");
+        PrintSMatrix(T1);
+    }
+    PressEnterToContinue(debug);
+    
+    
+    printf("████████ 函数 FastTransposeSMatrix \n");
+    {
+        RLSMatrix T2;
+        
+        FastTransposeSMatrix(M, &T2);
+        
+        printf("█ T2 = M(T) = \n");
+        PrintSMatrix(T2);
+    }
+    PressEnterToContinue(debug);
+    
+    
+    printf("████████ 函数 DestroySMatrix \n");
+    {
+        printf("█ 销毁 M 前：");
+        !M.mu && !M.nu && !M.tu ? printf(" M 不存在！！\n") : printf(" M 存在！\n");
+        
+        DestroySMatrix(&M);
+        
+        printf("█ 销毁 M 后：");
+        !M.mu && !M.nu && !M.tu ? printf(" M 不存在！！\n") : printf(" M 存在！\n");
+    }
+    PressEnterToContinue(debug);
+    
+    return 0;
+}
+
+CrossList.h
+/*===================
+ * 十字链表（稀疏矩阵）
+ *
+ * 包含算法: 5.4
+ ====================*/
+
+#ifndef CROSSLIST_H
+#define CROSSLIST_H
+
+#include <stdio.h>
+#include <stdlib.h>     // 提供malloc、realloc、free、exit原型
+#include <string.h>     // 提供 strstr 原型
+#include "Status.h"
+
+/* 十字链表元素类型 */
+typedef int ElemType;
+
+/* 非零元类型定义 */
+typedef struct OLNode {
+    int i, j;               // 该非零元的行下标和列下标
+    ElemType e;
+    struct OLNode* right;   // 该非零元所在的行表的后继链域
+    struct OLNode* down;    // 该非零元所在的列表的后继链域
+} OLNode, * OLink;
+
+/* 十字链表类型定义 */
+typedef struct {
+    OLink* rhead;       // 行链表头指针
+    OLink* chead;       // 列链表头指针
+    int mu, nu, tu;     // 矩阵的行数、列数和非零元个数
+} CrossList;
+
+
+/*
+ * ████████ 算法5.4 ████████
+ *
+ * 创建稀疏矩阵M
+ *
+ *
+ *【备注】
+ *
+ * 教材中默认从控制台读取数据。
+ * 这里为了方便测试，避免每次运行都手动输入数据，
+ * 因而允许选择从预设的文件path中读取测试数据。
+ *
+ * 如果需要从控制台读取数据，则path为NULL或者为空串，
+ * 如果需要从文件中读取数据，则需要在path中填写文件名信息。
+ */
+Status CreateSMatrix(CrossList* M, char* path);
+
+/*
+ * 销毁稀疏矩阵
+ */
+Status DestroySMatrix(CrossList* M);
+
+/*
+ * 矩阵复制
+ *
+ * 创建一个新矩阵T，该矩阵包含了从矩阵M中包含的数据。
+ */
+Status CopySMatrix(CrossList M, CrossList* T);
+
+/*
+ * 矩阵加法
+ *
+ * Q = M + N。
+ */
+Status AddSMatrix(CrossList M, CrossList N, CrossList* Q);
+
+/*
+ * 矩阵减法
+ *
+ * Q = M - N。
+ */
+Status SubSMatrix(CrossList M, CrossList N, CrossList* Q);
+
+/*
+ * 矩阵乘法
+ *
+ * Q = M * N。
+ */
+Status MultSMatrix(CrossList M, CrossList N, CrossList* Q);
+
+/*
+ * 矩阵转置
+ */
+Status TransposeSMatrix(CrossList M, CrossList* T);
+
+/*
+ * 输出矩阵
+ */
+void PrintSMatrix(CrossList M);
+
+#endif
+
+CrossList.c
+/*===================
+ * 十字链表（稀疏矩阵）
+ *
+ * 包含算法: 5.4
+ ====================*/
+
+#include "CrossList.h"
+
+/*
+ * ████████ 算法5.4 ████████
+ *
+ * 创建稀疏矩阵M
+ *
+ *
+ *【备注】
+ *
+ * 教材中默认从控制台读取数据。
+ * 这里为了方便测试，避免每次运行都手动输入数据，
+ * 因而允许选择从预设的文件path中读取测试数据。
+ *
+ * 如果需要从控制台读取数据，则path为NULL或者为空串，
+ * 如果需要从文件中读取数据，则需要在path中填写文件名信息。
+ */
+Status CreateSMatrix(CrossList* M, char* path) {
+    int i, j, k;
+    OLNode* p, * q;
+    FILE* fp;
+    int readFromConsole;    // 是否从控制台读取数据
+    
+    // 如果没有文件路径信息，则从控制台读取输入
+    readFromConsole = path == NULL || strcmp(path, "") == 0;
+    
+    if(readFromConsole) {
+        printf("请输入行数：");
+        scanf("%d", &((*M).mu));
+        printf("请输入列数：");
+        scanf("%d", &((*M).nu));
+        printf("请输入非零元素个数：");
+        scanf("%d", &((*M).tu));
+        printf("请输入%d个三元组信息\n", (*M).tu);
+    } else {
+        fp = fopen(path, "r");
+        ReadData(fp, "%d%d%d", &((*M).mu), &((*M).nu), &((*M).tu));
+    }
+    
+    // 创建行链（类似行索引，0号单元弃用）
+    (*M).rhead = (OLink*) malloc(((*M).mu + 1) * sizeof(OLink));
+    if((*M).rhead == NULL) {
+        exit(OVERFLOW);
+    }
+    
+    // 创建列链（类似列索引，0号单元弃用）
+    (*M).chead = (OLink*) malloc(((*M).nu + 1) * sizeof(OLink));
+    if((*M).chead == NULL) {
+        exit(OVERFLOW);
+    }
+    
+    // 初始化行链索引为NULL
+    for(k = 0; k <= (*M).mu; ++k) {
+        (*M).rhead[k] = NULL;
+    }
+    
+    // 初始化列链索引为NULL
+    for(k = 0; k <= (*M).nu; ++k) {
+        (*M).chead[k] = NULL;
+    }
+    
+    // 依次录入非零元
+    for(k = 1; k <= (*M).tu; ++k) {
+        // 创建三元组结点
+        p = (OLNode*) malloc(sizeof(OLNode));
+        if(p == NULL) {
+            exit(OVERFLOW);
+        }
+        
+        if(readFromConsole) {
+            printf("第%2d组：", k);
+            scanf("%d%d%d", &i, &j, &(p->e));
+        } else {
+            ReadData(fp, "%d%d%d", &i, &j, &(p->e));
+        }
+        
+        p->i = i;   // 行号
+        p->j = j;   // 列号
+        p->right = p->down = NULL;
+        
+        /*
+         * 开始行的插入
+         */
+        
+        // 如果该行还没有元素，或已有元素均位于该元素右侧，则可以直接插入
+        if((*M).rhead[i] == NULL || (*M).rhead[i]->j > j) {
+            // 定位行表中的插入位置
+            p->right = (*M).rhead[i];
+            (*M).rhead[i] = p;
+        } else {
+            q = (*M).rhead[i];
+
+            if(q->j == p->j) {
+                printf("此位置已被占用！！\n");
+                exit(ERROR);
+            }
+            
+            // 寻找插入位置的前一个位置
+            for(; (q->right) && (q->right->j < j); q = q->right) {
+            }
+            
+            if( (q->right) && (q->right->j == p->j) ) {
+                printf("此位置已被占用！！\n");
+                exit(ERROR);
+            }
+            
+            p->right = q->right;
+            q->right = p;
+        }
+        
+        /*
+         * 开始列的插入
+         */
+        
+        // 如果该列还没有元素，或已有元素均位于该元素下侧，则可以直接插入
+        if((*M).chead[j] == NULL || (*M).chead[j]->i > i) {
+            // 定位列表中的插入位置
+            p->down = (*M).chead[j];
+            (*M).chead[j] = p;
+        } else {
+            q = (*M).chead[j];
+
+            if(q->i == p->i) {
+                printf("此位置已被占用！！\n");
+                exit(ERROR);
+            }
+
+            // 寻找插入位置的前一个位置
+            for(; (q->down) && (q->down->i < i); q = q->down) {
+            }
+            
+            if( (q->down) && (q->down->i == p->i) ) {
+                printf("此位置已被占用！！\n");
+                exit(ERROR);
+            }
+            
+            p->down = q->down;
+            q->down = p;
+        }
+    }
+    
+    if(!readFromConsole) {
+        fclose(fp);
+    }
+    
+    return OK;
+}
+
+/*
+ * 销毁稀疏矩阵
+ */
+Status DestroySMatrix(CrossList* M) {
+    int i;
+    OLNode* p, * q;
+    
+    // 无论从按行还是按列，只需要朝着一个方向去遍历销毁就可以了
+    for(i = 1; i <= (*M).mu; ++i) {
+        p = (*M).rhead[i];
+        while(p != NULL) {
+            q = p->right;
+            free(p);
+            p = q;
+        }
+    }
+    
+    free((*M).rhead);
+    free((*M).chead);
+    
+    (*M).rhead = (*M).chead = NULL;
+    (*M).mu = (*M).nu = (*M).tu = 0;
+    
+    return OK;
+}
+
+/*
+ * 矩阵复制
+ *
+ * 创建一个新矩阵T，该矩阵包含了从矩阵M中包含的数据。
+ */
+Status CopySMatrix(CrossList M, CrossList* T) {
+    int k;
+    OLNode* p, * q, * r, * l;
+    
+    if(T == NULL) {
+        return ERROR;
+    }
+    
+    // 复制行列信息
+    (*T).mu = M.mu;
+    (*T).nu = M.nu;
+    (*T).tu = M.tu;
+    
+    // 创建行链（类似行索引，0号单元弃用）
+    (*T).rhead = (OLink*) malloc(((*T).mu + 1) * sizeof(OLink));
+    if((*T).rhead == NULL) {
+        exit(OVERFLOW);
+    }
+    
+    // 创建列链（类似列索引，0号单元弃用）
+    (*T).chead = (OLink*) malloc(((*T).nu + 1) * sizeof(OLink));
+    if((*T).chead == NULL) {
+        exit(OVERFLOW);
+    }
+    
+    // 初始化行链索引为NULL
+    for(k = 0; k <= (*T).mu; ++k) {                                //初始化行列头指针向量为空
+        (*T).rhead[k] = NULL;
+    }
+    
+    // 初始化列链索引为NULL
+    for(k = 0; k <= (*T).nu; ++k) {
+        (*T).chead[k] = NULL;
+    }
+    
+    // 按行扫描，依次复制非零元
+    for(k = 1; k <= M.mu; ++k) {
+        q = M.rhead[k];
+        
+        // 如果当前行没有元素，直接跳过
+        if(q == NULL) {
+            continue;
+        }
+        
+        r = NULL;
+        
+        while(q != NULL) {
+            // 创建三元组结点
+            p = (OLNode*) malloc(sizeof(OLNode));
+            if(p == NULL) {
+                exit(OVERFLOW);
+            }
+            
+            // 为结点赋值
+            p->i = q->i;
+            p->j = q->j;
+            p->e = q->e;
+            p->right = p->down = NULL;
+            
+            /*
+             * 开始行的插入
+             */
+            
+            if(r == NULL) {
+                (*T).rhead[q->i] = p;
+            } else {
+                r->right = p;
+            }
+            
+            // r指向当前行新插入的结点
+            r = p;
+            
+            /*
+             * 开始列的插入
+             */
+            
+            // 在列链中寻找插入位置
+            if((*T).chead[q->j] == NULL || (*T).chead[q->j]->i > q->i) {
+                r->down = (*T).chead[q->j];
+                (*T).chead[q->j] = r;
+            } else {
+                // 寻找插入位置的前一个位置
+                for(l = (*T).chead[q->j]; (l->down) && (l->down->i < q->i); l = l->down) {
+                }
+                r->down = l->down;
+                l->down = r;
+            }
+            
+            q = q->right;
+        }
+    }
+    
+    return OK;
+}
+
+/*
+ * 矩阵加法
+ *
+ * Q = M + N。
+ */
+Status AddSMatrix(CrossList M, CrossList N, CrossList* Q) {
+    int i;
+    OLNode* pm, * pn, * p, * r, * l;
+    
+    if(M.mu != N.mu || M.nu != N.nu) {
+        printf("两矩阵的行数、列数不满足相加条件！！\n");
+        return ERROR;
+    }
+    
+    // 初始化Q的行列信息
+    Q->mu = M.mu;
+    Q->nu = M.nu;
+    Q->tu = 0;
+    
+    // 创建行链（类似行索引，0号单元弃用）
+    Q->rhead = (OLink*) malloc((Q->mu + 1) * sizeof(OLink));
+    if(!Q->rhead) {
+        exit(OVERFLOW);
+    }
+    
+    // 创建列链（类似列索引，0号单元弃用）
+    Q->chead = (OLink*) malloc((Q->nu + 1) * sizeof(OLink));
+    if(!Q->chead) {
+        exit(OVERFLOW);
+    }
+    
+    // 初始化行链索引为NULL
+    for(i = 0; i <= Q->mu; ++i) {
+        Q->rhead[i] = NULL;
+    }
+    
+    // 初始化列链索引为NULL
+    for(i = 0; i <= Q->nu; ++i) {
+        Q->chead[i] = NULL;
+    }
+    
+    // 从第一行往下遍历
+    for(i = 1; i <= M.mu; ++i) {
+        pm = M.rhead[i];
+        pn = N.rhead[i];
+        
+        r = NULL;
+
+        // 如果M与N的当前行中均有未处理的非零元
+        while(pm != NULL && pn != NULL) {
+            // 处理特殊情形
+            if(pm->j == pn->j && pm->e + pn->e == 0) {
+                pm = pm->right;
+                pn = pn->right;
+                continue;
+            }
+            
+            // 创建结点
+            p = (OLNode*) malloc(sizeof(OLNode));
+            if(!p) {
+                exit(OVERFLOW);
+            }
+            
+            // M中的三元组列下标较小
+            if(pm->j < pn->j) {
+                p->i = pm->i;
+                p->j = pm->j;
+                p->e = pm->e;
+                pm = pm->right;
+                
+                // N中的三元组列下标较小
+            } else if(pm->j > pn->j) {
+                p->i = pn->i;
+                p->j = pn->j;
+                p->e = pn->e;
+                pn = pn->right;
+                
+                // M与N中的三元组列下标一致，需要进行加法运算
+            } else {
+                p->i = pm->i;
+                p->j = pm->j;
+                p->e = pm->e + pn->e;
+                pm = pm->right;
+                pn = pn->right;
+            }
+            
+            p->right = p->down = NULL;
+            
+            Q->tu++;    // Q中非零元个数增一
+            
+            /*
+             * 开始行的插入
+             */
+            
+            if(Q->rhead[p->i] == NULL) {
+                Q->rhead[p->i] = p;
+            } else {
+                r->right = p;
+            }
+            
+            // r指向当前行新插入的结点
+            r = p;
+            
+            /*
+             * 开始列的插入
+             */
+            
+            // 在列链中寻找插入位置
+            if(Q->chead[p->j] == NULL || Q->chead[p->j]->i > p->i) {
+                r->down = Q->chead[p->j];
+                Q->chead[p->j] = r;
+            } else {
+                // 寻找插入位置的前一个位置
+                for(l = Q->chead[p->j]; (l->down) && (l->down->i < p->i); l = l->down) {
+                }
+                r->down = l->down;
+                l->down = r;
+            }
+        }
+        
+        // 如果M的当前行中仍有未处理的非零元
+        while(pm != NULL) {
+            p = (OLNode*) malloc(sizeof(OLNode));
+            if(p == NULL) {
+                exit(OVERFLOW);
+            }
+            p->i = pm->i;
+            p->j = pm->j;
+            p->e = pm->e;
+            p->right = p->down = NULL;
+            
+            Q->tu++;    // Q中非零元个数增一
+            
+            if(Q->rhead[p->i] == NULL) {
+                Q->rhead[p->i] = p;
+            } else {
+                r->right = p;
+            }
+            
+            // r指向当前行新插入的结点
+            r = p;
+            
+            // 在列链中寻找插入位置
+            if(Q->chead[p->j] == NULL || Q->chead[p->j]->i > p->i) {
+                r->down = Q->chead[p->j];
+                Q->chead[p->j] = r;
+            } else {
+                // 寻找插入位置的前一个位置
+                for(l = Q->chead[p->j]; (l->down) && (l->down->i < p->i); l = l->down) {
+                }
+                r->down = l->down;
+                l->down = r;
+            }
+            
+            pm = pm->right;
+        }
+        
+        // 如果N的当前行中仍有未处理的非零元
+        while(pn != NULL) {
+            p = (OLNode*) malloc(sizeof(OLNode));
+            if(p == NULL) {
+                exit(OVERFLOW);
+            }
+            p->i = pn->i;
+            p->j = pn->j;
+            p->e = pn->e;
+            p->right = p->down = NULL;
+            
+            Q->tu++;    // Q中非零元个数增一
+            
+            if(Q->rhead[p->i] == NULL) {
+                Q->rhead[p->i] = p;
+            } else {
+                r->right = p;
+            }
+            
+            // r指向当前行新插入的结点
+            r = p;
+            
+            // 在列链中寻找插入位置
+            if(Q->chead[p->j] == NULL || Q->chead[p->j]->i > p->i) {
+                r->down = Q->chead[p->j];
+                Q->chead[p->j] = r;
+            } else {
+                // 寻找插入位置的前一个位置
+                for(l = Q->chead[p->j]; (l->down) && (l->down->i < p->i); l = l->down) {
+                }
+                r->down = l->down;
+                l->down = r;
+            }
+            
+            pn = pn->right;
+        }
+    }
+    
+    return OK;
+}
+
+/*
+ * 矩阵减法
+ *
+ * Q = M - N。
+ */
+Status SubSMatrix(CrossList M, CrossList N, CrossList* Q) {
+    int i;
+    OLNode* pm, * pn, * p, * r, * l;
+    
+    if(M.mu != N.mu || M.nu != N.nu) {
+        printf("两矩阵的行数、列数不满足相减条件！！\n");
+        return ERROR;
+    }
+    
+    // 初始化Q的行列信息
+    Q->mu = M.mu;
+    Q->nu = M.nu;
+    Q->tu = 0;
+    
+    // 创建行链（类似行索引，0号单元弃用）
+    Q->rhead = (OLink*) malloc((Q->mu + 1) * sizeof(OLink));
+    if(!Q->rhead) {
+        exit(OVERFLOW);
+    }
+    
+    // 创建列链（类似列索引，0号单元弃用）
+    Q->chead = (OLink*) malloc((Q->nu + 1) * sizeof(OLink));
+    if(!Q->chead) {
+        exit(OVERFLOW);
+    }
+    
+    // 初始化行链索引为NULL
+    for(i = 0; i <= Q->mu; ++i) {
+        Q->rhead[i] = NULL;
+    }
+    
+    // 初始化列链索引为NULL
+    for(i = 0; i <= Q->nu; ++i) {
+        Q->chead[i] = NULL;
+    }
+    
+    // 从第一行往下遍历
+    for(i = 1; i <= M.mu; ++i) {
+        pm = M.rhead[i];
+        pn = N.rhead[i];
+        
+        r = NULL;
+
+        // 如果M与N的当前行中均有未处理的非零元
+        while(pm != NULL && pn != NULL) {
+            // 处理特殊情形
+            if(pm->j == pn->j && pm->e - pn->e == 0) {
+                pm = pm->right;
+                pn = pn->right;
+                continue;
+            }
+            
+            // 创建结点
+            p = (OLNode*) malloc(sizeof(OLNode));
+            if(!p) {
+                exit(OVERFLOW);
+            }
+            
+            // M中的三元组列下标较小
+            if(pm->j < pn->j) {
+                p->i = pm->i;
+                p->j = pm->j;
+                p->e = pm->e;
+                pm = pm->right;
+                
+                // N中的三元组列下标较小
+            } else if(pm->j > pn->j) {
+                p->i = pn->i;
+                p->j = pn->j;
+                p->e = -pn->e;      // 加负号
+                pn = pn->right;
+                
+                // M与N中的三元组列下标一致，需要进行减法运算
+            } else {
+                p->i = pm->i;
+                p->j = pm->j;
+                p->e = pm->e - pn->e;
+                pm = pm->right;
+                pn = pn->right;
+            }
+            
+            p->right = p->down = NULL;
+            
+            Q->tu++;    // Q中非零元个数增一
+            
+            /*
+             * 开始行的插入
+             */
+            
+            if(Q->rhead[p->i] == NULL) {
+                Q->rhead[p->i] = p;
+            } else {
+                r->right = p;
+            }
+            
+            // r指向当前行新插入的结点
+            r = p;
+            
+            /*
+             * 开始列的插入
+             */
+            
+            // 在列链中寻找插入位置
+            if(Q->chead[p->j] == NULL || Q->chead[p->j]->i > p->i) {
+                r->down = Q->chead[p->j];
+                Q->chead[p->j] = r;
+            } else {
+                //寻找插入位置的前一个位置
+                for(l = Q->chead[p->j]; (l->down) && (l->down->i < p->i); l = l->down) {
+                }
+                r->down = l->down;
+                l->down = r;
+            }
+        }
+        
+        // 如果M的当前行中仍有未处理的非零元
+        while(pm != NULL) {
+            p = (OLNode*) malloc(sizeof(OLNode));
+            if(!p) {
+                exit(OVERFLOW);
+            }
+            p->i = pm->i;
+            p->j = pm->j;
+            p->e = pm->e;
+            p->right = p->down = NULL;
+            
+            Q->tu++;    // Q中非零元个数增一
+            
+            if(Q->rhead[p->i] == NULL) {
+                Q->rhead[p->i] = p;
+            } else {
+                r->right = p;
+            }
+            
+            // r指向当前行新插入的结点
+            r = p;
+            
+            // 在列链中寻找插入位置
+            if(Q->chead[p->j] == NULL || Q->chead[p->j]->i > p->i) {
+                r->down = Q->chead[p->j];
+                Q->chead[p->j] = r;
+            } else {
+                // 寻找插入位置的前一个位置
+                for(l = Q->chead[p->j]; (l->down) && (l->down->i < p->i); l = l->down) {
+                }
+                r->down = l->down;
+                l->down = r;
+            }
+            
+            pm = pm->right;
+        }
+        
+        // 如果N的当前行中仍有未处理的非零元
+        while(pn != NULL) {
+            p = (OLNode*) malloc(sizeof(OLNode));
+            if(!p) {
+                exit(OVERFLOW);
+            }
+            p->i = pn->i;
+            p->j = pn->j;
+            p->e = -pn->e;              // 加负号
+            p->right = p->down = NULL;
+            
+            Q->tu++;    // Q中非零元个数增一
+            
+            if(Q->rhead[p->i] == NULL) {
+                Q->rhead[p->i] = p;
+            } else {
+                r->right = p;
+            }
+            
+            // r指向当前行新插入的结点
+            r = p;
+            
+            // 在列链中寻找插入位置
+            if(Q->chead[p->j] == NULL || Q->chead[p->j]->i > p->i) {
+                r->down = Q->chead[p->j];
+                Q->chead[p->j] = r;
+            } else {
+                // 寻找插入位置的前一个位置
+                for(l = Q->chead[p->j]; (l->down) && (l->down->i < p->i); l = l->down) {
+                }
+                r->down = l->down;
+                l->down = r;
+            }
+            
+            pn = pn->right;
+        }
+    }
+    
+    return OK;
+}
+
+/*
+ * 矩阵乘法
+ *
+ * Q = M * N。
+ */
+Status MultSMatrix(CrossList M, CrossList N, CrossList* Q) {
+    int m_row, n_col, i;
+    ElemType e;
+    OLNode* pm, * pn, * p, * r, * l;
+    
+    // M的列数需要等于N的行数
+    if(M.nu != N.mu) {
+        printf("两矩阵的行数、列数不满足相乘条件！！\n");
+        return ERROR;
+    }
+    
+    // 初始化Q的行列信息
+    Q->mu = M.mu;
+    Q->nu = N.nu;
+    Q->tu = 0;
+    
+    // 创建行链（类似行索引，0号单元弃用）
+    Q->rhead = (OLink*) malloc((Q->mu + 1) * sizeof(OLink));
+    if(!Q->rhead) {
+        exit(OVERFLOW);
+    }
+    
+    // 创建列链（类似列索引，0号单元弃用）
+    Q->chead = (OLink*) malloc((Q->nu + 1) * sizeof(OLink));
+    if(!Q->chead) {
+        exit(OVERFLOW);
+    }
+    
+    // 初始化行链索引为NULL
+    for(i = 0; i <= Q->mu; ++i) {
+        Q->rhead[i] = NULL;
+    }
+    
+    // 初始化列链索引为NULL
+    for(i = 0; i <= Q->nu; ++i) {
+        Q->chead[i] = NULL;
+    }
+    
+    // Q是非零矩阵
+    if(M.tu * N.tu) {
+        for(m_row = 1; m_row <= M.mu; ++m_row) {
+            
+            r = NULL;
+
+            for(n_col = 1; n_col <= N.nu; ++n_col) {
+                pm = M.rhead[m_row];
+                pn = N.chead[n_col];
+                
+                e = 0;
+                
+                // M的行与N的列相乘
+                while(pm && pn) {
+                    if(pm->j < pn->i) {
+                        pm = pm->right;
+                    } else if(pm->j > pn->i) {
+                        pn = pn->down;
+                    } else {
+                        e += pm->e * pn->e;
+                        pm = pm->right;
+                        pn = pn->down;
+                    }
+                }
+                
+                if(e == 0) {
+                    continue;
+                }
+                
+                p = (OLNode*) malloc(sizeof(OLNode));
+                if(!p) {
+                    exit(OVERFLOW);
+                }
+                
+                // 为结点赋值
+                p->i = M.rhead[m_row]->i;
+                p->j = N.chead[n_col]->j;
+                p->e = e;
+                p->right = p->down = NULL;
+                
+                Q->tu++;    // Q中非零元个数增一
+                
+                if(Q->rhead[p->i] == NULL) {
+                    Q->rhead[p->i] = p;
+                } else {
+                    r->right = p;
+                }
+                
+                // r指向当前行新插入的结点
+                r = p;
+                
+                // 在列链中寻找插入位置
+                if(Q->chead[p->j] == NULL || Q->chead[p->j]->i > p->i) {
+                    r->down = Q->chead[p->j];
+                    Q->chead[p->j] = r;
+                } else {
+                    // 寻找插入位置的前一个位置
+                    for(l = Q->chead[p->j]; (l->down) && (l->down->i < p->i); l = l->down) {
+                    }
+                    
+                    r->down = l->down;
+                    l->down = r;
+                }
+            }
+        }
+    }
+    
+    return OK;
+}
+
+/*
+ * 矩阵转置
+ */
+Status TransposeSMatrix(CrossList M, CrossList* T) {
+    int i;
+    OLNode* p, * q, * r, * l;
+    
+    // 初始化Q的行列信息
+    (*T).mu = M.nu;
+    (*T).nu = M.mu;
+    (*T).tu = M.tu;
+    
+    // 创建行链（类似行索引，0号单元弃用）
+    (*T).rhead = (OLink*) malloc(((*T).mu + 1) * sizeof(OLink));
+    if(!(*T).rhead) {
+        exit(OVERFLOW);
+    }
+    
+    // 创建列链（类似列索引，0号单元弃用）
+    (*T).chead = (OLink*) malloc(((*T).nu + 1) * sizeof(OLink));
+    if(!(*T).chead) {
+        exit(OVERFLOW);
+    }
+    
+    // 初始化行链索引为NULL
+    for(i = 0; i <= (*T).mu; ++i) {
+        (*T).rhead[i] = NULL;
+    }
+    
+    // 初始化列链索引为NULL
+    for(i = 0; i <= (*T).nu; ++i) {
+        (*T).chead[i] = NULL;
+    }
+    
+    // 零矩阵
+    if(!(*T).tu) {
+        return OK;
+    }
+    
+    // 按列扫描
+    for(i = 1; i <= M.nu; ++i) {
+        q = M.chead[i];
+        
+        // 如果当前列没有元素，直接跳过
+        if(q == NULL) {
+            continue;
+        }
+
+        r = NULL;
+
+        while(q != NULL) {
+            // 创建三元组结点
+            p = (OLNode*) malloc(sizeof(OLNode));
+            if(!p) {
+                exit(OVERFLOW);
+            }
+            
+            // 为结点赋值，行变列，列变行
+            p->i = q->j;
+            p->j = q->i;
+            p->e = q->e;
+            p->right = p->down = NULL;
+    
+            /*
+             * 开始行的插入
+             */
+            
+            if((*T).rhead[p->i] == NULL) {
+                (*T).rhead[p->i] = p;
+            } else {
+                r->right = p;
+            }
+    
+            // r指向当前行新插入的结点
+            r = p;
+    
+            /*
+             * 开始列的插入
+             */
+    
+            // 在列链中寻找插入位置
+            if((*T).chead[p->j] == NULL || (*T).chead[p->j]->i > p->i) {
+                r->down = (*T).chead[p->j];
+                (*T).chead[p->j] = r;
+            } else {
+                // 寻找插入位置的前一个位置
+                for(l = (*T).chead[p->j]; (l->down) && (l->down->i < p->i); l = l->down) {
+                }
+                r->down = l->down;
+                l->down = r;
+            }
+            
+            q = q->down;
+        }
+    }
+    
+    return OK;
+}
+
+/*
+ * 输出矩阵
+ */
+void PrintSMatrix(CrossList M) {
+    int i, j;
+    OLNode* p;
+    
+    for(i = 1; i <= M.mu; ++i) {
+        p = M.rhead[i];
+        for(j = 1; j <= M.nu; ++j) {
+            if(p && p->j == j) {
+                printf("%3d ", p->e);
+                p = p->right;
+            } else {
+                printf("%3d ", 0);
+            }
+        }
+        printf("\n");
+    }
+}
+
+CrossList_main.c
+#include <stdio.h>
+#include "CrossList.h"
+
+int main(int argc, char** argv) {
+    CrossList M, N;
+    
+    printf("████████ 函数 CreateSMatrix \n");
+    {
+        printf("█ 创建两个稀疏矩阵 M、N ...\n");
+        CreateSMatrix(&M, "TestData_M.txt");
+        CreateSMatrix(&N, "TestData_N.txt");
+    }
+    PressEnterToContinue(debug);
+    
+    
+    printf("████████ 函数 PrintSMatrix \n");
+    {
+        printf("█ M = \n");
+        PrintSMatrix(M);
+        
+        printf("█ N = \n");
+        PrintSMatrix(N);
+    }
+    PressEnterToContinue(debug);
+    
+    
+    printf("████████ 函数 CopySMatrix \n");
+    {
+        CrossList Tmp;
+        
+        printf("█ 复制 M 到 Tmp...\n");
+        CopySMatrix(M, &Tmp);
+        
+        printf("█ Tmp = \n");
+        PrintSMatrix(Tmp);
+    }
+    PressEnterToContinue(debug);
+    
+    
+    printf("████████ 函数 AddSMatrix \n");
+    {
+        CrossList Q1;
+        
+        AddSMatrix(M, N, &Q1);
+        
+        printf("█ Q1 = M + N = \n");
+        PrintSMatrix(Q1);
+    }
+    PressEnterToContinue(debug);
+    
+    
+    printf("████████ 函数 SubtSMatrix \n");
+    {
+        CrossList Q2;
+        
+        SubSMatrix(M, N, &Q2);
+        
+        printf("█ Q2 = M - N = \n");
+        PrintSMatrix(Q2);
+    }
+    PressEnterToContinue(debug);
+    
+    
+    printf("████████ 函数 MultSMatrix \n");
+    {
+        CrossList Q3;
+        
+        MultSMatrix(M, N, &Q3);
+        
+        printf("█ Q3 = M * N = \n");
+        PrintSMatrix(Q3);
+    }
+    PressEnterToContinue(debug);
+    
+    
+    printf("████████ 函数 TransposeSMatrix \n");
+    {
+        CrossList T;
+        
+        TransposeSMatrix(M, &T);
+        
+        printf("█ T = M(T) = \n");
+        PrintSMatrix(T);
+    }
+    PressEnterToContinue(debug);
+    
+    
+    printf("████████ 函数 DestroySMatrix \n");
+    {
+        printf("█ 销毁 M 前：");
+        !M.mu && !M.nu && !M.tu ? printf(" M 不存在！！\n") : printf(" M 存在！\n");
+        
+        DestroySMatrix(&M);
+        
+        printf("█ 销毁 M 后：");
+        !M.mu && !M.nu && !M.tu ? printf(" M 不存在！！\n") : printf(" M 存在！\n");
+    }
+    PressEnterToContinue(debug);
+    
+    return 0;
+}
+

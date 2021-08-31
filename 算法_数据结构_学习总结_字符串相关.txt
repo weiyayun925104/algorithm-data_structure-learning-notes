@@ -1,0 +1,2555 @@
+longest_common_subsequence.h
+#ifndef LONGESTCOMMONSUBSEQUENCE
+#define LONGESTCOMMONSUBSEQUENCE
+#include <type_traits>
+#include<vector>
+#include<iostream>
+namespace  IntroductionToAlgorithm
+{
+    namespace DynamicProgrammingAlgorithm
+    {
+    /*
+     * - 最长公共子序列算法思想，令 X=< x1,x2,...xm > Y=<y1,y2,...yn> 为两个序列， Z=<z1,z2,...zk>为X和Y的某一个最长公共子序列：
+     *      - 如果 xm=yn，则zk=xm=yn,且Z(k-1)是X(m-1)和Y(n-1)的一个最长公共子序列：
+     *      - 如果 xm != yn, 则如果 zk!=xm,意味着 Z是 X(m-1) 和 Y的一个最长公共子序列
+     *      - 如果 xm != yn, 则如果 zk!=yn,意味着 Z是 Xm 和 Y(n-1)的一个最长公共子序列
+     *
+     *  在计算最长公共子序列过程中，顺便计算了标记矩阵。定义c[i,j]为Xi和Yj的最长公共子序列长度，则
+     *
+     * - c[i,j]= 0（若 i=0或j=0)
+     * - c[i,j]=c[i-1,j-1]+1  (若i,j>0,且xi=yj)
+     * - c[i,j]=max(c[i,j-1],c[i-1,j])(若x,j>0 且 xi!=yj)
+     *
+     * 标记矩阵flag_matrix表征的是如何从c[i-1,j-1]、c[i,j-1]、c[i-1,j]这三者之一到达c[i,j]。即flag_matrix（i,j)对应的是矩阵：
+     *
+     *    | c[i-1][j-1]    	c[i-1][j]   	|
+     *    |                              			|
+     *    | c[i][j-1]  		c[i][j]  		|
+     *
+     *      - 如果 xi=yj，则标记flag_matrix[i-1][j-1]为 11
+     *      - 如果 xi！=yj，且c[i-1][j]> c[i][j-1]则标记flag_matrix[i-1][j-1] 为10
+     *      - 如果 xi！=yj，且c[i][j-1]> c[i-1][j]则标记flag_matrix[i-1][j-1] 为01
+     */
+    template<typename Iterator,typename OutIterator>
+    std::size_t make_LCS(const Iterator begin,const Iterator end,
+                      	const std::vector<std::vector<int>>& flag_matrix,typename std::iterator_traits<Iterator>::difference_type seq1_index,
+                              typename std::iterator_traits<Iterator>::difference_type seq2_index,
+                               OutIterator& out_begin)
+    {
+        typedef typename std::iterator_traits<Iterator>::value_type T;
+        typedef typename std::iterator_traits<OutIterator>::value_type Out_T;
+        static_assert(std::is_same<T, Out_T>::value,"输入序列与输出序列必须包含相同类型的元素");
+        std::size_t result=0;
+        if(seq1_index<0||seq2_index<0)
+            return result;
+        if(flag_matrix[seq1_index][seq2_index]==11)  //两个子序列尾部相同
+        {
+            result =(make_LCS(begin,end,flag_matrix,seq1_index-1,seq2_index-1,out_begin)+1);
+            *out_begin=*(begin+seq1_index); //由于是从尾部向前打印，这里要递归调用之后输出
+            out_begin++; //这里修改了out_begin,从而在不同迭代次数下，其值会发生改变
+            return result;
+        }
+        else if(flag_matrix[seq1_index][seq2_index]==10)//表示c[i-1,j]较大，此时X[0...i]与Y[0...j]最长公共子序列也是X[0...i-1]与Y[0...j]最长公共子序列
+        {
+            result =make_LCS(begin,end,flag_matrix,seq1_index-1,seq2_index,out_begin);
+            return result;
+        }
+        else       //表示c[i,j-1]较大，此时X[0...i]与Y[0...j]最长公共子序列也是X[0...i]与Y[0...j-1]最长公共子序列
+        {
+            result = make_LCS(begin,end,flag_matrix,seq1_index,seq2_index-1,out_begin);
+            return result;
+        }
+    }
+
+    /*
+     * - 最长公共子序列算法思想，令 X=< x1,x2,...xm > Y=<y1,y2,...yn> 为两个序列， Z=<z1,z2,...zk>为X和Y的某一个最长公共子序列：
+     *      - 如果 xm=yn，则zk=xm=yn,且Z(k-1)是X(m-1)和Y(n-1)的一个最长公共子序列：
+     *      - 如果 xm != yn, 则如果 zk!=xm,意味着 Z是 X(m-1) 和 Y的一个最长公共子序列
+     *      - 如果 xm != yn, 则如果 zk!=yn,意味着 Z是 Xm 和 Y(n-1)的一个最长公共子序列
+     *
+     *  因此如果 xm=yn,我们递归求解 X(m-1)和Y(n-1)的最长公共子序列；如果xm != yn，我们求解X(m-1) 和 Y的一个最长公共子序列,以及Xm 和 Y(n-1)的一个最长公共子序列，
+     * 这两个之中的最大值即为X和Y的最长公共子序列
+     *
+     * 定义c[i,j]为Xi和Yj的最长公共子序列长度，则 c[i,j]= 0（若 i=0或j=0) ;c[i-1,j-1]+1  (若i,j>0,且xi=yj)；max(c[i,j-1],c[i-1,j])(若i,j>0 且 xi!=yj)
+     * 通过动态规划方法从底向上计算
+     */
+        template<typename Iterator1,typename Iterator2,typename OutIterator>
+        std::size_t longest_common_subsequence(const Iterator1 first_begin,const Iterator1 first_end,
+                                           const Iterator2 second_begin,const Iterator2 second_end,
+                                           OutIterator out_begin)
+        {
+            typedef typename std::iterator_traits<Iterator1>::value_type T1;
+            typedef typename std::iterator_traits<Iterator2>::value_type T2;
+            typedef typename std::iterator_traits<OutIterator>::value_type T3;
+            static_assert(std::is_same<T1, T2>::value,"两个序列必须包含相同类型的元素");
+            static_assert(std::is_same<T1, T3>::value,"输入序列与输出序列必须包含相同类型的元素");
+            auto len1=std::distance(first_begin,first_end);
+            auto len2=std::distance(second_begin,second_end);
+            if(len1<=0||len2<=0)
+                return 0;
+            auto rows=len1;
+            auto columns=len2;
+            //*******************  创建数据矩阵  *******************
+            std::vector<std::vector<int>> c_matrix(rows+1); //c_matrix[i,j]为Xi和Yj的最长公共子序列长度，因为i,j可能为0，所以矩阵外扩一个单位
+            for(int i=0;i<rows+1;i++)  // 矩阵大小 (rows+1)*(colums+1)
+            {
+                c_matrix.at(i)=std::vector<int>(columns+1);
+            }
+            std::vector<std::vector<int>> flag_matrix(rows); //用于构造最长公共子序列，它存放的是从c[i-1][j-1]到c[i,j]的路径
+            for(int i=0;i<rows;i++)// 矩阵大小 (rows)*(colums)
+            {
+                flag_matrix.at(i)=std::vector<int>(columns);
+            }
+            //**************　　初始化矩阵　****************************
+            for(int i=0;i<rows+1;i++)  // c[i,j]= 0（若 i=0或j=0)
+                   c_matrix[i][0]=0;
+            for(int i=0;i<columns+1;i++)// c[i,j]= 0（若 i=0或j=0)
+                   c_matrix[0][i]=0;
+            //********************* 开始计算 ********************
+            for(int r=1;r<rows+1;r++) //row=0,column=0已由初始化条件给出，这里从r=1,c=1开始
+            {
+                for(int c=1;c<columns+1;c++)
+                {
+                       if( *(first_begin+r-1) ==*(second_begin+c-1))//c[i,j]=c[i-1,j-1]+1 (若i,j>0,且xi=yj)
+                       {
+                                c_matrix[r][c]=c_matrix[r-1][c-1]+1;
+                                flag_matrix[r-1][c-1]=11;  //c[i,j]=c[i-1,j-1]+1，标记flag_matrix[i-1][j-1] 为11
+
+                       }
+                       else if(c_matrix[r-1][c]>=c_matrix[r][c-1])//c[i,j]=max(c[i,j-1],c[i-1,j]) (若i,j>0,且xi=yj)
+                       {
+                                c_matrix[r][c]=c_matrix[r-1][c];
+                                flag_matrix[r-1][c-1]=10; // 标记flag_matrix[i-1][j-1] 为10，表示c[i-1,j]较大
+                       }
+                       else                   //c[i,j]=max(c[i,j-1],c[i-1,j]) (若i,j>0,且xi=yj)
+                       {
+                                c_matrix[r][c]=c_matrix[r][c-1];
+                                flag_matrix[r-1][c-1]=1;// 标记flag_matrix[i-1][j-1] 为01，表示c[i,j-1]较大
+                        }
+                 }
+            }
+
+            //*************  构造最长公共子序列  ****************
+            return make_LCS(first_begin,first_end,flag_matrix,len1-1,len2-1,out_begin); //从尾部开始向前打印
+        }
+
+    }
+}
+#endif // LONGESTCOMMONSUBSEQUENCE
+
+longest_common_subsequence.cpp
+#include "longest_common_subsequence.h"
+#include<string>
+using IntroductionToAlgorithm::DynamicProgrammingAlgorithm::longest_common_subsequence;
+
+int main(int argc, char *argv[])
+{
+    using namespace std;
+    {
+        std::string s1;
+        std::string s2("abcdefg");
+        std::string result(s2);
+        auto length=longest_common_subsequence(s1.begin(),s1.end(),s2.begin(),s2.end(),result.begin());
+        result.resize(length);
+        cout << result.length() << ", " << result << endl;
+    }
+    {
+        std::string s1("ABCBDAB");
+        std::string s2("BDCABA");
+        std::string result(s1);
+        auto length=longest_common_subsequence(s1.begin(),s1.end(),s2.begin(),s2.end(),result.begin());
+        result.resize(length);
+        cout << result.length() << ", " << result << endl;
+    }
+    {
+        std::string s1("ABCDEFGHIJ");
+        std::string s2("ABCDEFGHIJ");
+        std::string result(s1);
+        auto length=longest_common_subsequence(s1.begin(),s1.end(),s2.begin(),s2.end(),result.begin());
+        result.resize(length);
+        cout << result.length() << ", " << result << endl;
+    }
+}
+
+显示结果如下
+g++ -o longest_common_subsequence longest_common_subsequence.cpp
+
+$ ./longest_common_subsequence
+0,
+4, BCBA
+10, ABCDEFGHIJ
+
+match.h
+
+#ifndef MATCH_H
+#define MATCH_H
+#include<vector>
+
+namespace IntroductionToAlgorithm
+{
+    namespace StringMatchingAlgorithm
+    {
+        template<typename IteratorT,typename IteratorP>
+        std::vector<int> match(const IteratorT iterT_begin,const IteratorT iterT_end,
+              const IteratorP iterP_begin,const IteratorP iterP_end)
+        {
+            typedef typename std::iterator_traits<IteratorT>::value_type T1;
+            typedef typename std::iterator_traits<IteratorP>::value_type T2;
+
+            static_assert(std::is_same<T1, T2>::value,"match error:sequence T and P must contain same type value!");
+
+            auto lenT=std::distance(iterT_begin,iterT_end);
+            auto lenP=std::distance(iterP_begin,iterP_end);
+            if(lenT<=0)
+                throw std::invalid_argument("match error:iterT_begin must < iterT_end");
+            if(lenP<=0)
+                throw std::invalid_argument("match error:iterP_begin must < iterP_end");
+
+
+            std::vector<int> result;
+            for(int i=0;i<=lenT-lenP;i++)
+            {
+                bool matched=true;
+                for(int j=0;j<lenP;j++)
+                {
+                    if(*(iterT_begin+i+j) != *(iterP_begin+j))
+                    {
+                        matched=false;
+                        break;
+                    }
+                }
+                if(matched)
+                    result.push_back(i);
+            }
+            return result;
+        }
+
+    }
+}
+#endif // MATCH_H
+
+kmp.h
+#ifndef KMP_H
+#define KMP_H
+#include<vector>
+namespace IntroductionToAlgorithm 
+{
+    namespace StringMatchingAlgorithm
+    {
+        template<typename IteratorP>
+        std::vector<int> get_pai(const IteratorP iterP_begin,const IteratorP iterP_end)
+        {
+            auto lenP=std::distance(iterP_begin,iterP_end);
+            if(lenP<=0)
+                throw std::invalid_argument("get_pai error:iterP_begin must < iterP_end");
+
+            std::vector<int> pai(lenP,0);
+            int k=0;
+            for(int q=1;q<lenP;q++)
+            {
+                while(k>0 && *(iterP_begin+k)!=*(iterP_begin+q))
+                    k=pai[k-1];
+                if(*(iterP_begin+k)==*(iterP_begin+q)) k++;
+                pai[q]=k;
+            }
+            return pai;
+        }
+
+        template<typename IteratorT,typename IteratorP>
+        std::vector<int> kmp_match(const IteratorT iterT_begin,const IteratorT iterT_end,
+             const IteratorP iterP_begin,const IteratorP iterP_end)
+        {
+            typedef typename std::iterator_traits<IteratorT>::value_type T1;
+            typedef typename std::iterator_traits<IteratorP>::value_type T2;
+
+            static_assert(std::is_same<T1, T2>::value,"kmp_match error:sequence T and P must contain same type value!");
+
+            auto lenT=std::distance(iterT_begin,iterT_end);
+            auto lenP=std::distance(iterP_begin,iterP_end);
+            if(lenT<=0)
+                throw std::invalid_argument("kmp_match error:iterT_begin must < iterT_end");
+            if(lenP<=0)
+                throw std::invalid_argument("kmp_match error:iterP_begin must < iterP_end");
+
+            std::vector<int> result;
+            if(lenT<lenP) //模式串P较长，直接返回
+                return result;
+
+            //**********  预处理  **************
+            auto pai=get_pai(iterP_begin,iterP_end);
+            //*********** 匹配 ***************
+            int q=0;
+            for(int i=0;i<lenT;i++)
+            {
+                while(q>0 && *(iterP_begin+q)!=*(iterT_begin+i)) q=pai[q-1];
+                if(*(iterP_begin+q)==*(iterT_begin+i)) q++;
+                if(q==lenP)
+                {
+                    result.push_back(i+1-lenP);
+                    q=pai[lenP-1];    //防止出现P[lenP+1]的情况出现，这里用pai[lenP-1]
+                }
+            }
+            return result;
+        }
+
+    }
+}
+#endif // KMP_H
+
+knuth_morris_pratt.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include <math.h>
+#include <float.h>
+#include <time.h>
+#include <ctype.h>
+
+#ifndef NULL
+#define NULL ((void*) 0)
+#endif
+
+FILE *fd;
+int n;
+char arrTextStr[64][128];
+char arrPatternStr[64][128];
+
+typedef struct {uint32_t count;uint32_t max;void **mem;} vector_t;
+
+void vector_init(vector_t *vec){vec->count = 0;vec->max = 0;vec->mem = NULL;}
+void vector_free(vector_t *vec){if(vec->mem != NULL){free(vec->mem);}vector_init(vec);}
+void vector_get(vector_t *vec, int index, void **item){if(index >= 0 && index < vec->count){*item = vec->mem[index];}}
+
+int vector_reserve(vector_t *vec, int size)
+{
+	int max;void *temp;max = 0;
+	if(size <= vec->max){return 1;}
+	else if(vec->max == 0 && size > 0){max = 8;if(size > 8){do{max *= 2;}while(size > max);}}
+	else if(vec->max > 0 && size > vec->max){max = vec->max;do{max *= 2;}while(size > max);}
+	if(max > 0)
+	{
+		temp = NULL;temp = realloc(vec->mem, max * sizeof(void *));
+		if(temp != NULL){vec->mem = temp;vec->max = max;return 1;}else{return 0;}
+	}
+	else {return 1;}
+}
+
+int vector_add(vector_t *vec, void *item)
+{
+	if(vector_reserve(vec, vec->count + 1) == 1){vec->mem[vec->count] = item;vec->count++;return 1;}else{return 0;}
+}
+void kmp_makeNext(char *pattern, uint32_t m, int *next)
+{
+	uint32_t index;uint32_t k;next[0] = 0;k = 0;
+	for(index = 1;index < m;index++)
+	{
+		while(k > 0 && pattern[k] != pattern[index]){k = next[k-1];}if(pattern[k] == pattern[index]){k++;}next[index] = k;
+	}
+}
+char * kmp(char *text, uint32_t n, char *pattern, uint32_t m, vector_t *vec)
+{
+	int *next;uint32_t i;uint32_t index;int result;if(text == NULL){return NULL;}if(n <= 0){return NULL;}if(pattern == NULL){return NULL;}
+	if(m <= 0){return NULL;}if(m > n){return NULL;}next = NULL;next = malloc(m*sizeof(int));if(next == NULL){return NULL;}
+	result = -1;if(vec != NULL){vector_free(vec);}kmp_makeNext(pattern, m, next);index = 0;
+	for(i = 0; i < n; i++)
+	{
+		while(index > 0 && pattern[index] != text[i]){index = next[index-1];}if(pattern[index] == text[i]){index++;}
+		if(index == m)
+		{
+			if(result == -1){result = (i+1-m);}if(vec != NULL){vector_add(vec, (text+(i+1-m)));}index = next[index-1];
+		}
+	}
+	free(next);if(result == -1){return NULL;}return (text+result);
+}
+
+void build()
+{
+	int i;int j;uint32_t length;vector_t oneVec;char *one;char output[128];memset(arrTextStr,0,sizeof(arrTextStr));memset(arrPatternStr,0,sizeof(arrPatternStr));
+	memset(output,0,sizeof(output));n = 10;vector_init(&oneVec);
+	strcpy(arrTextStr[0],"weiyayunabcdefgh") ;strcpy(arrPatternStr[0],"we");
+	strcpy(arrTextStr[1],"weiyayunabcdefgh") ;strcpy(arrPatternStr[1],"iy");
+	strcpy(arrTextStr[2],"weiyayunabcdefgh") ;strcpy(arrPatternStr[2],"ay");
+	strcpy(arrTextStr[3],"weiyayunabcdefgh") ;strcpy(arrPatternStr[3],"un");
+	strcpy(arrTextStr[4],"weiyayunabcdefgh") ;strcpy(arrPatternStr[4],"ab");
+	strcpy(arrTextStr[5],"weiyayunabcdefgh") ;strcpy(arrPatternStr[5],"cd");
+	strcpy(arrTextStr[6],"weiyayunabcdefgh") ;strcpy(arrPatternStr[6],"ef");
+	strcpy(arrTextStr[7],"weiyayunabcdefgh") ;strcpy(arrPatternStr[7],"gh");
+	strcpy(arrTextStr[8],"weiyayunabcdefgh") ;strcpy(arrPatternStr[8],"y");
+	strcpy(arrTextStr[9],"weiyayunabcdefgh") ;strcpy(arrPatternStr[9],"e");
+	fd=fopen("out.txt", "wb");
+	for(i = 0; i < 8; ++i)
+	{
+		length = strlen(arrPatternStr[i]);one = kmp(arrTextStr[i], strlen(arrTextStr[i]), arrPatternStr[i], length, NULL);
+		if(one != NULL){memcpy(output, one, length);output[length] = 0;}fprintf(fd, "%s : %s : %s\n", arrTextStr[i], arrPatternStr[i], output);
+	}
+	fprintf(fd, "\n");fprintf(fd, "\n");
+	for(i = 8; i < n; ++i)
+	{
+		length = strlen(arrPatternStr[i]);one = kmp(arrTextStr[i], strlen(arrTextStr[i]), arrPatternStr[i], length, &oneVec);
+		if(one != NULL){memcpy(output, one, length);output[length] = 0;}
+		for(j = 0; j < oneVec.count; ++j)
+		{
+    	fprintf(fd, "%s : %s : %s\n", arrTextStr[i], arrPatternStr[i], output);
+		}
+		fprintf(fd, "\n");
+	}
+	fprintf(fd, "\n");
+	fflush(fd);
+	fclose(fd);
+	vector_free(&oneVec);
+}
+
+int main()
+{
+	build();
+	return 0;
+}
+
+extend_knuth_morris_pratt.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include <math.h>
+#include <float.h>
+#include <time.h>
+#include <ctype.h>
+
+#ifndef NULL
+#define NULL ((void*) 0)
+#endif
+
+#define min(x, y) ({typeof(x) inner_one = (x);typeof(y) inner_two = (y);(void)(&inner_one == &inner_two);inner_one < inner_two ? inner_one : inner_two;})
+#define max(x, y) ({typeof(x) inner_one = (x);typeof(y) inner_two = (y);(void)(&inner_one == &inner_two);inner_one > inner_two ? inner_one : inner_two;})
+
+FILE *fd;
+int n;
+char arrTextStr[64][128];
+char arrPatternStr[64][128];
+
+typedef struct {int count;int max;void **mem;} vector_t;
+
+void vector_init(vector_t *vec){vec->count = 0;vec->max = 0;vec->mem = NULL;}
+void vector_free(vector_t *vec){if(vec->mem != NULL){free(vec->mem);}vector_init(vec);}
+void vector_get(vector_t *vec, int index, void **item){if(index >= 0 && index < vec->count){*item = vec->mem[index];}}
+
+int vector_reserve(vector_t *vec, int size)
+{
+	int max;void *temp;max = 0;
+	if(size <= vec->max){return 1;}
+	else if(vec->max == 0 && size > 0){max = 8;if(size > 8){do{max *= 2;}while(size > max);}}
+	else if(vec->max > 0 && size > vec->max){max = vec->max;do{max *= 2;}while(size > max);}
+	if(max > 0)
+	{
+		temp = NULL;temp = realloc(vec->mem, max * sizeof(void *));
+		if(temp != NULL){vec->mem = temp;vec->max = max;return 1;}else{return 0;}
+	}
+	else {return 1;}
+}
+
+int vector_add(vector_t *vec, void *item)
+{
+	if(vector_reserve(vec, vec->count + 1) == 1){vec->mem[vec->count] = item;vec->count++;return 1;}else{return 0;}
+}
+
+void extend_knuth_morris_pratt_makePrefix(char *pattern, int m, int *prefix)
+{
+	int i;int j;int p0;prefix[0] = m;if(m == 1){return ;}
+	i = 0;while(i < m-1 && pattern[i] == pattern[i+1]){i++;}prefix[1] = i;if(m == 2){return ;}p0 = 1;
+	for(i = 2;i < m;i++)
+	{
+		if(i > p0 && i < (p0+prefix[p0]) && (i+prefix[i-p0]) < (p0+prefix[p0])){prefix[i] = prefix[i-p0];}
+		else
+		{
+			j = max((p0+prefix[p0]-i), 0);j = min(prefix[i-p0], j);
+			while((i+j) < m && pattern[j] == pattern[i+j]){j++;}prefix[i] = j;p0 = i;
+		}
+	}
+}
+void extend_knuth_morris_pratt_makeExtend(char *text, int n, char *pattern, int m, int *extend, int *prefix)
+{
+	int i;int j;int p0;extend_knuth_morris_pratt_makePrefix(pattern, m, prefix);
+	i = 0;while(i < m && i < n && pattern[i] == text[i]){i++;}extend[0] = i;p0 = 0;if(n == 1){return ;}
+	for(i = 1;i < n;i++)
+	{
+		if(i > p0 && i < (p0+extend[p0]) && (i+prefix[i-p0]) < (p0+extend[p0])){extend[i] = prefix[i-p0];}
+		else
+		{
+			j = max((p0+extend[p0]-i), 0);if(i > p0 && i < (p0+extend[p0])){j = min(prefix[i-p0], j);}			
+			while(j < m && (i+j) < n && pattern[j] == text[i+j]){j++;}extend[i] = j;p0 = i;			
+		}
+	}
+}
+
+char * extend_knuth_morris_pratt_search(char *text, int n, char *pattern, int m, vector_t *vec)
+{
+	int *prefix;int *extend;int i;int result;if(text == NULL){return NULL;}if(n <= 0){return NULL;}if(pattern == NULL){return NULL;}
+	if(m <= 0){return NULL;}if(m > n){return NULL;}prefix = NULL;prefix = malloc(m*sizeof(int));if(prefix == NULL){return NULL;}
+	extend = NULL;extend = malloc(n*sizeof(int));if(extend == NULL){free(prefix);return NULL;}
+	result = -1;if(vec != NULL){vector_free(vec);}extend_knuth_morris_pratt_makeExtend(text, n, pattern, m, extend, prefix);
+	for(i = 0; i < n; i++)
+	{
+		if(extend[i] == m)
+		{
+			if(result == -1){result = i;}if(vec != NULL){vector_add(vec, (text+i));}
+		}
+	}
+	free(prefix);free(extend);if(result == -1){return NULL;}return (text+result);
+}
+
+void build()
+{
+	int i;int j;uint32_t length;vector_t oneVec;char *one;char output[128];memset(arrTextStr,0,sizeof(arrTextStr));memset(arrPatternStr,0,sizeof(arrPatternStr));
+	memset(output,0,sizeof(output));n = 14;vector_init(&oneVec);
+	strcpy(arrTextStr[0],"weiyayunabcdefgh") ;strcpy(arrPatternStr[0],"we");
+	strcpy(arrTextStr[1],"weiyayunabcdefgh") ;strcpy(arrPatternStr[1],"iy");
+	strcpy(arrTextStr[2],"weiyayunabcdefgh") ;strcpy(arrPatternStr[2],"ay");
+	strcpy(arrTextStr[3],"weiyayunabcdefgh") ;strcpy(arrPatternStr[3],"un");
+	strcpy(arrTextStr[4],"weiyayunabcdefgh") ;strcpy(arrPatternStr[4],"ab");
+	strcpy(arrTextStr[5],"weiyayunabcdefgh") ;strcpy(arrPatternStr[5],"cd");
+	strcpy(arrTextStr[6],"weiyayunabcdefgh") ;strcpy(arrPatternStr[6],"ef");
+	strcpy(arrTextStr[7],"weiyayunabcdefgh") ;strcpy(arrPatternStr[7],"gh");
+	strcpy(arrTextStr[8],"weiyayunabcdefgh") ;strcpy(arrPatternStr[8],"y");
+	strcpy(arrTextStr[9],"weiyayunabcdefgh") ;strcpy(arrPatternStr[9],"e");
+	strcpy(arrTextStr[10],"aaaaaaaaaaaaaaaa") ;strcpy(arrPatternStr[10],"aa");
+	strcpy(arrTextStr[11],"abababababababab") ;strcpy(arrPatternStr[11],"bab");
+	strcpy(arrTextStr[12],"abababcbabacabcb") ;strcpy(arrPatternStr[12],"bab");
+	strcpy(arrTextStr[13],"deabcdeabcfgabcfgabcabhiabcjk") ;strcpy(arrPatternStr[13],"abc");
+	fd=fopen("out.txt", "wb");
+	for(i = 0; i < 8; ++i)
+	{
+		length = strlen(arrPatternStr[i]);one = extend_knuth_morris_pratt_search(arrTextStr[i], strlen(arrTextStr[i]), arrPatternStr[i], length, NULL);
+		if(one != NULL){memcpy(output, one, length);output[length] = 0;}fprintf(fd, "%s : %s : %s\n", arrTextStr[i], arrPatternStr[i], output);
+	}
+	fprintf(fd, "\n");fprintf(fd, "\n");
+	for(i = 8; i < n; ++i)
+	{
+		length = strlen(arrPatternStr[i]);one = extend_knuth_morris_pratt_search(arrTextStr[i], strlen(arrTextStr[i]), arrPatternStr[i], length, &oneVec);
+		if(one != NULL){memcpy(output, one, length);output[length] = 0;}
+		for(j = 0; j < oneVec.count; ++j)
+		{
+    	fprintf(fd, "%s : %s : %s\n", arrTextStr[i], arrPatternStr[i], output);
+		}
+		fprintf(fd, "\n");
+	}
+	fprintf(fd, "\n");
+	fflush(fd);
+	fclose(fd);
+	vector_free(&oneVec);
+}
+
+int main()
+{
+	build();
+	return 0;
+}
+
+brute_force.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include <math.h>
+#include <float.h>
+#include <time.h>
+#include <ctype.h>
+
+#ifndef NULL
+#define NULL ((void*) 0)
+#endif
+
+FILE *fd;
+int n;
+char arrTextStr[64][128];
+char arrPatternStr[64][128];
+
+typedef struct {uint32_t count;uint32_t max;void **mem;} vector_t;
+
+void vector_init(vector_t *vec){vec->count = 0;vec->max = 0;vec->mem = NULL;}
+void vector_free(vector_t *vec){if(vec->mem != NULL){free(vec->mem);}vector_init(vec);}
+void vector_get(vector_t *vec, int index, void **item){if(index >= 0 && index < vec->count){*item = vec->mem[index];}}
+
+int vector_reserve(vector_t *vec, int size)
+{
+	int max;void *temp;max = 0;
+	if(size <= vec->max){return 1;}
+	else if(vec->max == 0 && size > 0){max = 8;if(size > 8){do{max *= 2;}while(size > max);}}
+	else if(vec->max > 0 && size > vec->max){max = vec->max;do{max *= 2;}while(size > max);}
+	if(max > 0)
+	{
+		temp = NULL;temp = realloc(vec->mem, max * sizeof(void *));
+		if(temp != NULL){vec->mem = temp;vec->max = max;return 1;}else{return 0;}
+	}
+	else {return 1;}
+}
+
+int vector_add(vector_t *vec, void *item)
+{
+	if(vector_reserve(vec, vec->count + 1) == 1){vec->mem[vec->count] = item;vec->count++;return 1;}else{return 0;}
+}
+
+char * brute_force(char *text, uint32_t n, char *pattern, uint32_t m, vector_t *vec)
+{
+	uint32_t index;int result;if(text == NULL){return NULL;}if(n <= 0){return NULL;}if(pattern == NULL){return NULL;}if(m <= 0){return NULL;}
+	if(m > n){return NULL;}result = -1;if(vec != NULL){vector_free(vec);}
+	for(index = 0;index <= (n-m);index++)
+	{
+		if(memcmp((text+index), pattern, m) == 0)
+		{
+			if(result == -1){result = index;}if(vec != NULL){vector_add(vec, (text+index));}
+		}
+	}
+	if(result == -1){return NULL;}return (text+result);
+}
+
+void build()
+{
+	int i;int j;uint32_t length;vector_t oneVec;char *one;char output[128];memset(arrTextStr,0,sizeof(arrTextStr));memset(arrPatternStr,0,sizeof(arrPatternStr));
+	memset(output,0,sizeof(output));n = 10;vector_init(&oneVec);
+	strcpy(arrTextStr[0],"weiyayunabcdefgh") ;strcpy(arrPatternStr[0],"we");
+	strcpy(arrTextStr[1],"weiyayunabcdefgh") ;strcpy(arrPatternStr[1],"iy");
+	strcpy(arrTextStr[2],"weiyayunabcdefgh") ;strcpy(arrPatternStr[2],"ay");
+	strcpy(arrTextStr[3],"weiyayunabcdefgh") ;strcpy(arrPatternStr[3],"un");
+	strcpy(arrTextStr[4],"weiyayunabcdefgh") ;strcpy(arrPatternStr[4],"ab");
+	strcpy(arrTextStr[5],"weiyayunabcdefgh") ;strcpy(arrPatternStr[5],"cd");
+	strcpy(arrTextStr[6],"weiyayunabcdefgh") ;strcpy(arrPatternStr[6],"ef");
+	strcpy(arrTextStr[7],"weiyayunabcdefgh") ;strcpy(arrPatternStr[7],"gh");
+	strcpy(arrTextStr[8],"weiyayunabcdefgh") ;strcpy(arrPatternStr[8],"y");
+	strcpy(arrTextStr[9],"weiyayunabcdefgh") ;strcpy(arrPatternStr[9],"e");
+	fd=fopen("out.txt", "wb");
+	for(i = 0; i < 8; ++i)
+	{
+		length = strlen(arrPatternStr[i]);one = brute_force(arrTextStr[i], strlen(arrTextStr[i]), arrPatternStr[i], length, NULL);
+		if(one != NULL){memcpy(output, one, length);output[length] = 0;}fprintf(fd, "%s : %s : %s\n", arrTextStr[i], arrPatternStr[i], output);
+	}
+	fprintf(fd, "\n");fprintf(fd, "\n");
+	for(i = 8; i < n; ++i)
+	{
+		length = strlen(arrPatternStr[i]);one = brute_force(arrTextStr[i], strlen(arrTextStr[i]), arrPatternStr[i], length, &oneVec);
+		if(one != NULL){memcpy(output, one, length);output[length] = 0;}
+		for(j = 0; j < oneVec.count; ++j)
+		{
+    	fprintf(fd, "%s : %s : %s\n", arrTextStr[i], arrPatternStr[i], output);
+		}
+		fprintf(fd, "\n");
+	}
+	fprintf(fd, "\n");
+	fflush(fd);
+	fclose(fd);
+	vector_free(&oneVec);
+}
+
+int main()
+{
+	build();
+	return 0;
+}
+
+horspool.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include <math.h>
+#include <float.h>
+#include <time.h>
+#include <ctype.h>
+
+#ifndef NULL
+#define NULL ((void*) 0)
+#endif
+
+FILE *fd;
+int n;
+char arrTextStr[64][128];
+char arrPatternStr[64][128];
+
+typedef struct {uint32_t count;uint32_t max;void **mem;} vector_t;
+
+void vector_init(vector_t *vec){vec->count = 0;vec->max = 0;vec->mem = NULL;}
+void vector_free(vector_t *vec){if(vec->mem != NULL){free(vec->mem);}vector_init(vec);}
+void vector_get(vector_t *vec, int index, void **item){if(index >= 0 && index < vec->count){*item = vec->mem[index];}}
+
+int vector_reserve(vector_t *vec, int size)
+{
+	int max;void *temp;max = 0;
+	if(size <= vec->max){return 1;}
+	else if(vec->max == 0 && size > 0){max = 8;if(size > 8){do{max *= 2;}while(size > max);}}
+	else if(vec->max > 0 && size > vec->max){max = vec->max;do{max *= 2;}while(size > max);}
+	if(max > 0)
+	{
+		temp = NULL;temp = realloc(vec->mem, max * sizeof(void *));
+		if(temp != NULL){vec->mem = temp;vec->max = max;return 1;}else{return 0;}
+	}
+	else {return 1;}
+}
+
+int vector_add(vector_t *vec, void *item)
+{
+	if(vector_reserve(vec, vec->count + 1) == 1){vec->mem[vec->count] = item;vec->count++;return 1;}else{return 0;}
+}
+void horspool_makeTable(char *pattern, uint32_t m, int *table)
+{
+	uint32_t i;for(i = 0;i < 256;i++){table[i] = m;}for(i = 0;i < m-1;i++){table[(uint8_t)(pattern[i])] = ((m-1)-i);}
+}
+char * horspool(char *text, uint32_t n, char *pattern, uint32_t m, vector_t *vec)
+{
+	char one;int table[256];uint32_t index;int result;if(text == NULL){return NULL;}if(n <= 0){return NULL;}if(pattern == NULL){return NULL;}if(m <= 0){return NULL;}
+	if(m > n){return NULL;}result = -1;if(vec != NULL){vector_free(vec);}horspool_makeTable(pattern, m, table);index = 0;
+	while(index <= (n-m))
+	{
+		one = text[index+m-1];
+		if(one == pattern[m-1] && memcmp((text+index), pattern, m) == 0)
+		{
+			if(result == -1){result = index;}if(vec != NULL){vector_add(vec, (text+index));}
+		}
+		index += table[(uint8_t)one];
+	}
+	if(result == -1){return NULL;}return (text+result);
+}
+
+void build()
+{
+	int i;int j;uint32_t length;vector_t oneVec;char *one;char output[128];memset(arrTextStr,0,sizeof(arrTextStr));memset(arrPatternStr,0,sizeof(arrPatternStr));
+	memset(output,0,sizeof(output));n = 10;vector_init(&oneVec);
+	strcpy(arrTextStr[0],"weiyayunabcdefgh") ;strcpy(arrPatternStr[0],"we");
+	strcpy(arrTextStr[1],"weiyayunabcdefgh") ;strcpy(arrPatternStr[1],"iy");
+	strcpy(arrTextStr[2],"weiyayunabcdefgh") ;strcpy(arrPatternStr[2],"ay");
+	strcpy(arrTextStr[3],"weiyayunabcdefgh") ;strcpy(arrPatternStr[3],"un");
+	strcpy(arrTextStr[4],"weiyayunabcdefgh") ;strcpy(arrPatternStr[4],"ab");
+	strcpy(arrTextStr[5],"weiyayunabcdefgh") ;strcpy(arrPatternStr[5],"cd");
+	strcpy(arrTextStr[6],"weiyayunabcdefgh") ;strcpy(arrPatternStr[6],"ef");
+	strcpy(arrTextStr[7],"weiyayunabcdefgh") ;strcpy(arrPatternStr[7],"gh");
+	strcpy(arrTextStr[8],"weiyayunabcdefgh") ;strcpy(arrPatternStr[8],"y");
+	strcpy(arrTextStr[9],"weiyayunabcdefgh") ;strcpy(arrPatternStr[9],"e");
+	fd=fopen("out.txt", "wb");
+	for(i = 0; i < 8; ++i)
+	{
+		length = strlen(arrPatternStr[i]);one = horspool(arrTextStr[i], strlen(arrTextStr[i]), arrPatternStr[i], length, NULL);
+		if(one != NULL){memcpy(output, one, length);output[length] = 0;}fprintf(fd, "%s : %s : %s\n", arrTextStr[i], arrPatternStr[i], output);
+	}
+	fprintf(fd, "\n");fprintf(fd, "\n");
+	for(i = 8; i < n; ++i)
+	{
+		length = strlen(arrPatternStr[i]);one = horspool(arrTextStr[i], strlen(arrTextStr[i]), arrPatternStr[i], length, &oneVec);
+		if(one != NULL){memcpy(output, one, length);output[length] = 0;}
+		for(j = 0; j < oneVec.count; ++j)
+		{
+    	fprintf(fd, "%s : %s : %s\n", arrTextStr[i], arrPatternStr[i], output);
+		}
+		fprintf(fd, "\n");
+	}
+	fprintf(fd, "\n");
+	fflush(fd);
+	fclose(fd);
+	vector_free(&oneVec);
+}
+
+int main()
+{
+	build();
+	return 0;
+}
+
+sunday.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include <math.h>
+#include <float.h>
+#include <time.h>
+#include <ctype.h>
+
+#ifndef NULL
+#define NULL ((void*) 0)
+#endif
+
+FILE *fd;
+int n;
+char arrTextStr[64][128];
+char arrPatternStr[64][128];
+
+typedef struct {uint32_t count;uint32_t max;void **mem;} vector_t;
+
+void vector_init(vector_t *vec){vec->count = 0;vec->max = 0;vec->mem = NULL;}
+void vector_free(vector_t *vec){if(vec->mem != NULL){free(vec->mem);}vector_init(vec);}
+void vector_get(vector_t *vec, int index, void **item){if(index >= 0 && index < vec->count){*item = vec->mem[index];}}
+
+int vector_reserve(vector_t *vec, int size)
+{
+	int max;void *temp;max = 0;
+	if(size <= vec->max){return 1;}
+	else if(vec->max == 0 && size > 0){max = 8;if(size > 8){do{max *= 2;}while(size > max);}}
+	else if(vec->max > 0 && size > vec->max){max = vec->max;do{max *= 2;}while(size > max);}
+	if(max > 0)
+	{
+		temp = NULL;temp = realloc(vec->mem, max * sizeof(void *));
+		if(temp != NULL){vec->mem = temp;vec->max = max;return 1;}else{return 0;}
+	}
+	else {return 1;}
+}
+
+int vector_add(vector_t *vec, void *item)
+{
+	if(vector_reserve(vec, vec->count + 1) == 1){vec->mem[vec->count] = item;vec->count++;return 1;}else{return 0;}
+}
+void sunday_makeTable(char *pattern, uint32_t m, int *table)
+{
+	uint32_t i;for(i = 0;i < 256;i++){table[i] = (m+1);}for(i = 0;i < m;i++){table[(uint8_t)(pattern[i])] = (m-i);}
+}
+char * sunday(char *text, uint32_t n, char *pattern, uint32_t m, vector_t *vec)
+{
+	int table[256];uint32_t index;int result;if(text == NULL){return NULL;}if(n <= 0){return NULL;}if(pattern == NULL){return NULL;}
+	if(m <= 0){return NULL;}if(m > n){return NULL;}result = -1;if(vec != NULL){vector_free(vec);}sunday_makeTable(pattern, m, table);index = 0;
+	while(index <= (n-m))
+	{
+		if(memcmp((text+index), pattern, m) == 0){if(result == -1){result = index;}if(vec != NULL){vector_add(vec, (text+index));}}
+		if(index < (n-m)){index += table[(uint8_t)(text[index+m])];}else{index += 1;}
+	}
+	if(result == -1){return NULL;}return (text+result);
+}
+
+void build()
+{
+	int i;int j;uint32_t length;vector_t oneVec;char *one;char output[128];memset(arrTextStr,0,sizeof(arrTextStr));memset(arrPatternStr,0,sizeof(arrPatternStr));
+	memset(output,0,sizeof(output));n = 14;vector_init(&oneVec);
+	strcpy(arrTextStr[0],"weiyayunabcdefgh") ;strcpy(arrPatternStr[0],"we");
+	strcpy(arrTextStr[1],"weiyayunabcdefgh") ;strcpy(arrPatternStr[1],"iy");
+	strcpy(arrTextStr[2],"weiyayunabcdefgh") ;strcpy(arrPatternStr[2],"ay");
+	strcpy(arrTextStr[3],"weiyayunabcdefgh") ;strcpy(arrPatternStr[3],"un");
+	strcpy(arrTextStr[4],"weiyayunabcdefgh") ;strcpy(arrPatternStr[4],"ab");
+	strcpy(arrTextStr[5],"weiyayunabcdefgh") ;strcpy(arrPatternStr[5],"cd");
+	strcpy(arrTextStr[6],"weiyayunabcdefgh") ;strcpy(arrPatternStr[6],"ef");
+	strcpy(arrTextStr[7],"weiyayunabcdefgh") ;strcpy(arrPatternStr[7],"gh");
+	strcpy(arrTextStr[8],"weiyayunabcdefgh") ;strcpy(arrPatternStr[8],"y");
+	strcpy(arrTextStr[9],"weiyayunabcdefgh") ;strcpy(arrPatternStr[9],"e");
+	strcpy(arrTextStr[10],"aaaaaaaaaaaaaaaa") ;strcpy(arrPatternStr[10],"aa");
+	strcpy(arrTextStr[11],"abababababababab") ;strcpy(arrPatternStr[11],"bab");
+	strcpy(arrTextStr[12],"abababcbabacabcb") ;strcpy(arrPatternStr[12],"bab");
+	strcpy(arrTextStr[13],"deabcdeabcfgabcfgabcabhiabcjk") ;strcpy(arrPatternStr[13],"abc");
+	fd=fopen("out.txt", "wb");
+	for(i = 0; i < 8; ++i)
+	{
+		length = strlen(arrPatternStr[i]);one = sunday(arrTextStr[i], strlen(arrTextStr[i]), arrPatternStr[i], length, NULL);
+		if(one != NULL){memcpy(output, one, length);output[length] = 0;}fprintf(fd, "%s : %s : %s\n", arrTextStr[i], arrPatternStr[i], output);
+	}
+	fprintf(fd, "\n");fprintf(fd, "\n");
+	for(i = 8; i < n; ++i)
+	{
+		length = strlen(arrPatternStr[i]);one = sunday(arrTextStr[i], strlen(arrTextStr[i]), arrPatternStr[i], length, &oneVec);
+		if(one != NULL){memcpy(output, one, length);output[length] = 0;}
+		for(j = 0; j < oneVec.count; ++j)
+		{
+    	fprintf(fd, "%s : %s : %s\n", arrTextStr[i], arrPatternStr[i], output);
+		}
+		fprintf(fd, "\n");
+	}
+	fprintf(fd, "\n");
+	fflush(fd);
+	fclose(fd);
+	vector_free(&oneVec);
+}
+
+int main()
+{
+	build();
+	return 0;
+}
+
+rabin_karp.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include <math.h>
+#include <float.h>
+#include <time.h>
+#include <ctype.h>
+
+#ifndef NULL
+#define NULL ((void*) 0)
+#endif
+
+#define min(x, y) ({typeof(x) inner_one = (x);typeof(y) inner_two = (y);(void)(&inner_one == &inner_two);inner_one < inner_two ? inner_one : inner_two;})
+#define max(x, y) ({typeof(x) inner_one = (x);typeof(y) inner_two = (y);(void)(&inner_one == &inner_two);inner_one > inner_two ? inner_one : inner_two;})
+
+FILE *fd;
+int n;
+char arrTextStr[64][128];
+char arrPatternStr[64][128];
+
+#define PRIME_RK 16777619
+
+typedef struct {uint32_t count;uint32_t max;void **mem;} vector_t;
+
+void vector_init(vector_t *vec){vec->count = 0;vec->max = 0;vec->mem = NULL;}
+void vector_free(vector_t *vec){if(vec->mem != NULL){free(vec->mem);}vector_init(vec);}
+void vector_get(vector_t *vec, int index, void **item){if(index >= 0 && index < vec->count){*item = vec->mem[index];}}
+
+int vector_reserve(vector_t *vec, int size)
+{
+	int max;void *temp;max = 0;
+	if(size <= vec->max){return 1;}
+	else if(vec->max == 0 && size > 0){max = 8;if(size > 8){do{max *= 2;}while(size > max);}}
+	else if(vec->max > 0 && size > vec->max){max = vec->max;do{max *= 2;}while(size > max);}
+	if(max > 0)
+	{
+		temp = NULL;temp = realloc(vec->mem, max * sizeof(void *));
+		if(temp != NULL){vec->mem = temp;vec->max = max;return 1;}else{return 0;}
+	}
+	else {return 1;}
+}
+
+int vector_add(vector_t *vec, void *item)
+{
+	if(vector_reserve(vec, vec->count + 1) == 1){vec->mem[vec->count] = item;vec->count++;return 1;}else{return 0;}
+}
+
+uint32_t rehash(uint32_t hashval, uint8_t sub, uint8_t add, uint32_t base, uint32_t maxpow)
+{
+	uint32_t one;one = (((uint32_t)sub) * maxpow);hashval *= base;hashval += ((uint32_t)add);
+	if(hashval < one){hashval = (uint32_t)(((uint64_t)0x0000000100000000ULL)-((uint64_t)(one-hashval)));}else{hashval -= one;}
+	return hashval;
+}
+
+uint32_t hash(void *buf, size_t len, uint32_t base)
+{
+	unsigned char *one;size_t i;uint32_t hval;hval = 0;
+	for(i = 0;i < len;i++)
+	{
+		one = (((unsigned char *)buf)+i);hval = ((hval*base)+((uint32_t)(*one)));
+	}
+	return hval;
+}
+
+uint32_t mod_pow(uint32_t base, size_t len)
+{
+  uint32_t ret;ret = 1;while(len > 0){if((len & 1) == 1){ret = (ret*base);}base = (base*base);len >>= 1;}return ret;
+}
+
+uint32_t mod_pow_two(uint32_t base, size_t len)
+{
+  uint32_t ret;ret = 1;while(len > 0){ret = (ret*base);len--;}return ret;
+}
+
+char * brute_force(char *text, uint32_t n, char *pattern, uint32_t m, vector_t *vec)
+{
+	uint32_t index;int result;if(text == NULL){return NULL;}if(n <= 0){return NULL;}if(pattern == NULL){return NULL;}if(m <= 0){return NULL;}
+	if(m > n){return NULL;}result = -1;if(vec != NULL){vector_free(vec);}
+	for(index = 0;index <= (n-m);index++)
+	{
+		if(memcmp((text+index), pattern, m) == 0)
+		{
+			if(result == -1){result = index;}if(vec != NULL){vector_add(vec, (text+index));}
+		}
+	}
+	if(result == -1){return NULL;}return (text+result);
+}
+
+char * rabin_karp(char *text, uint32_t n, char *pattern, uint32_t m, vector_t *vec)
+{
+	char *sub;char *add;uint32_t hash_pattern;uint32_t hash_roll;uint32_t maxpow;uint32_t index;int result;if(text == NULL){return NULL;}
+	if(n <= 0){return NULL;}if(pattern == NULL){return NULL;}if(m <= 0){return NULL;}if(m > n){return NULL;}
+	if(m == 1){return brute_force(text, n, pattern, m, vec);}result = -1;if(vec != NULL){vector_free(vec);}
+	maxpow = mod_pow(PRIME_RK, m);hash_pattern = hash(pattern, m, PRIME_RK);hash_roll = hash(text, m, PRIME_RK);index = 0;
+	while(index <= (n-m))
+	{
+		if(hash_roll == hash_pattern && memcmp((text+index), pattern, m) == 0)
+		{
+			if(result == -1){result = index;}if(vec != NULL){vector_add(vec, (text+index));}
+		}
+		if(index < (n-m))
+		{
+			sub = (text+index);add = (text+index+m);hash_roll = rehash(hash_roll, (uint8_t)(*sub), (uint8_t)(*add), PRIME_RK, maxpow);
+		}		
+		index++;
+	}
+	if(result == -1){return NULL;}return (text+result);
+}
+
+void build()
+{
+	int i;int j;uint32_t length;vector_t oneVec;char *one;char output[128];memset(arrTextStr,0,sizeof(arrTextStr));memset(arrPatternStr,0,sizeof(arrPatternStr));
+	memset(output,0,sizeof(output));n = 14;vector_init(&oneVec);
+	strcpy(arrTextStr[0],"weiyayunabcdefgh") ;strcpy(arrPatternStr[0],"we");
+	strcpy(arrTextStr[1],"weiyayunabcdefgh") ;strcpy(arrPatternStr[1],"iy");
+	strcpy(arrTextStr[2],"weiyayunabcdefgh") ;strcpy(arrPatternStr[2],"ay");
+	strcpy(arrTextStr[3],"weiyayunabcdefgh") ;strcpy(arrPatternStr[3],"un");
+	strcpy(arrTextStr[4],"weiyayunabcdefgh") ;strcpy(arrPatternStr[4],"ab");
+	strcpy(arrTextStr[5],"weiyayunabcdefgh") ;strcpy(arrPatternStr[5],"cd");
+	strcpy(arrTextStr[6],"weiyayunabcdefgh") ;strcpy(arrPatternStr[6],"ef");
+	strcpy(arrTextStr[7],"weiyayunabcdefgh") ;strcpy(arrPatternStr[7],"gh");
+	strcpy(arrTextStr[8],"weiyayunabcdefgh") ;strcpy(arrPatternStr[8],"y");
+	strcpy(arrTextStr[9],"weiyayunabcdefgh") ;strcpy(arrPatternStr[9],"e");
+	strcpy(arrTextStr[10],"aaaaaaaaaaaaaaaa") ;strcpy(arrPatternStr[10],"aa");
+	strcpy(arrTextStr[11],"abababababababab") ;strcpy(arrPatternStr[11],"bab");
+	strcpy(arrTextStr[12],"abababcbabacabcb") ;strcpy(arrPatternStr[12],"bab");
+	strcpy(arrTextStr[13],"deabcdeabcfgabcfgabcabhiabcjk") ;strcpy(arrPatternStr[13],"abc");
+	fd=fopen("out.txt", "wb");
+	for(i = 0; i < 8; ++i)
+	{
+		length = strlen(arrPatternStr[i]);one = rabin_karp(arrTextStr[i], strlen(arrTextStr[i]), arrPatternStr[i], length, NULL);
+		if(one != NULL){memcpy(output, one, length);output[length] = 0;}fprintf(fd, "%s : %s : %s\n", arrTextStr[i], arrPatternStr[i], output);
+	}
+	fprintf(fd, "\n");fprintf(fd, "\n");
+	for(i = 8; i < n; ++i)
+	{
+		length = strlen(arrPatternStr[i]);one = rabin_karp(arrTextStr[i], strlen(arrTextStr[i]), arrPatternStr[i], length, &oneVec);
+		if(one != NULL){memcpy(output, one, length);output[length] = 0;}
+		for(j = 0; j < oneVec.count; ++j)
+		{
+    	fprintf(fd, "%s : %s : %s\n", arrTextStr[i], arrPatternStr[i], output);
+		}
+		fprintf(fd, "\n");
+	}
+	fprintf(fd, "\n");
+	fflush(fd);
+	fclose(fd);
+	vector_free(&oneVec);
+}
+
+int main()
+{
+	build();
+	return 0;
+}
+
+boyer_moore.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include <math.h>
+#include <float.h>
+#include <time.h>
+#include <ctype.h>
+
+#ifndef NULL
+#define NULL ((void*) 0)
+#endif
+
+#define min(x, y) ({typeof(x) inner_one = (x);typeof(y) inner_two = (y);(void)(&inner_one == &inner_two);inner_one < inner_two ? inner_one : inner_two;})
+#define max(x, y) ({typeof(x) inner_one = (x);typeof(y) inner_two = (y);(void)(&inner_one == &inner_two);inner_one > inner_two ? inner_one : inner_two;})
+
+FILE *fd;
+int n;
+char arrTextStr[64][128];
+char arrPatternStr[64][128];
+
+typedef struct {int count;int max;void **mem;} vector_t;
+
+void vector_init(vector_t *vec){vec->count = 0;vec->max = 0;vec->mem = NULL;}
+void vector_free(vector_t *vec){if(vec->mem != NULL){free(vec->mem);}vector_init(vec);}
+void vector_get(vector_t *vec, int index, void **item){if(index >= 0 && index < vec->count){*item = vec->mem[index];}}
+
+int vector_reserve(vector_t *vec, int size)
+{
+	int max;void *temp;max = 0;
+	if(size <= vec->max){return 1;}
+	else if(vec->max == 0 && size > 0){max = 8;if(size > 8){do{max *= 2;}while(size > max);}}
+	else if(vec->max > 0 && size > vec->max){max = vec->max;do{max *= 2;}while(size > max);}
+	if(max > 0)
+	{
+		temp = NULL;temp = realloc(vec->mem, max * sizeof(void *));
+		if(temp != NULL){vec->mem = temp;vec->max = max;return 1;}else{return 0;}
+	}
+	else {return 1;}
+}
+
+int vector_add(vector_t *vec, void *item)
+{
+	if(vector_reserve(vec, vec->count + 1) == 1){vec->mem[vec->count] = item;vec->count++;return 1;}else{return 0;}
+}
+
+void boyer_moore_makeBadTable(char *pattern, int m, int *badTable)
+{
+	int i;for(i = 0;i < 256;i++){badTable[i] = m;}for(i = 0;i < m-1;i++){badTable[(uint8_t)(pattern[i])] = ((m-1)-i);}
+}
+
+void boyer_moore_makeSuffix(char *pattern, int m, int *suffix)
+{
+	int i;int f;int g;suffix[m - 1] = m;g = m - 1;
+	for (i = m - 2; i >= 0; --i)
+	{
+		if (i > g && suffix[i + m - 1 - f] < i - g){suffix[i] = suffix[i + m - 1 - f];}
+		else{f = i;g = i;while (g >= 0 && pattern[g] == pattern[g + m - 1 - f]){--g;}suffix[i] = f - g;}
+	}
+}
+void boyer_moore_makeGoodTable(char *pattern, int m, int *goodTable, int *suffix)
+{
+	int i;int j;boyer_moore_makeSuffix(pattern, m, suffix);for(i = 0;i < m;i++){goodTable[i] = m;}
+	j = 0;for(i = m-2;i >= 0;i--){if(suffix[i] == i+1){while(j < m-1-i){if(goodTable[j] == m){goodTable[j] = (m-1-i);}j++;}}}
+	for(i = 0;i <= m-2;i++){goodTable[m-1-suffix[i]] = (m-1-i);}
+}
+char * boyer_moore(char *text, int n, char *pattern, int m, vector_t *vec)
+{
+	int badTable[256];int *suffix;int *goodTable;int i;int index;int one;int result;if(text == NULL){return NULL;}if(n <= 0){return NULL;}
+	if(pattern == NULL){return NULL;}if(m <= 0){return NULL;}if(m > n){return NULL;}
+	suffix = NULL;suffix = malloc(m*sizeof(int));if(suffix == NULL){return NULL;}
+	goodTable = NULL;goodTable = malloc(m*sizeof(int));if(goodTable == NULL){free(suffix);return NULL;}
+	result = -1;if(vec != NULL){vector_free(vec);}boyer_moore_makeBadTable(pattern, m, badTable);boyer_moore_makeSuffix(pattern, m, suffix);
+	boyer_moore_makeGoodTable(pattern, m, goodTable, suffix);index = 0;
+	while(index <= (n-m))
+	{
+		i = m-1;while(i >= 0 && text[index+i] == pattern[i]){i--;}
+		if(i < 0)
+		{
+			if(result == -1){result = index;}if(vec != NULL){vector_add(vec, (text+index));}index += goodTable[0];
+		}
+		else
+		{
+			if(i == m-1){index += badTable[(uint8_t)(text[index+m-1])];}
+			else
+			{
+			    one = max(badTable[(uint8_t)(text[index+m-1])], (badTable[(uint8_t)(text[index+i])]-m+1+i));one = max(one, goodTable[i]);index += one;
+			}
+		}
+	}
+	free(suffix);free(goodTable);if(result == -1){return NULL;}return (text+result);
+}
+
+void build()
+{
+	int i;int j;int length;vector_t oneVec;char *one;char output[128];memset(arrTextStr,0,sizeof(arrTextStr));memset(arrPatternStr,0,sizeof(arrPatternStr));
+	memset(output,0,sizeof(output));n = 14;vector_init(&oneVec);
+	strcpy(arrTextStr[0],"weiyayunabcdefgh") ;strcpy(arrPatternStr[0],"we");
+	strcpy(arrTextStr[1],"weiyayunabcdefgh") ;strcpy(arrPatternStr[1],"iy");
+	strcpy(arrTextStr[2],"weiyayunabcdefgh") ;strcpy(arrPatternStr[2],"ay");
+	strcpy(arrTextStr[3],"weiyayunabcdefgh") ;strcpy(arrPatternStr[3],"un");
+	strcpy(arrTextStr[4],"weiyayunabcdefgh") ;strcpy(arrPatternStr[4],"ab");
+	strcpy(arrTextStr[5],"weiyayunabcdefgh") ;strcpy(arrPatternStr[5],"cd");
+	strcpy(arrTextStr[6],"weiyayunabcdefgh") ;strcpy(arrPatternStr[6],"ef");
+	strcpy(arrTextStr[7],"weiyayunabcdefgh") ;strcpy(arrPatternStr[7],"gh");
+	strcpy(arrTextStr[8],"weiyayunabcdefgh") ;strcpy(arrPatternStr[8],"y");
+	strcpy(arrTextStr[9],"weiyayunabcdefgh") ;strcpy(arrPatternStr[9],"e");
+	strcpy(arrTextStr[10],"aaaaaaaaaaaaaaaa") ;strcpy(arrPatternStr[10],"aa");
+	strcpy(arrTextStr[11],"abababababababab") ;strcpy(arrPatternStr[11],"bab");
+	strcpy(arrTextStr[12],"abababcbabacabcb") ;strcpy(arrPatternStr[12],"bab");
+	strcpy(arrTextStr[13],"deabcdeabcfgabcfgabcabhiabcjk") ;strcpy(arrPatternStr[13],"abc");
+	fd=fopen("out.txt", "wb");
+	for(i = 0; i < 8; ++i)
+	{
+		length = strlen(arrPatternStr[i]);one = boyer_moore(arrTextStr[i], strlen(arrTextStr[i]), arrPatternStr[i], length, NULL);
+		if(one != NULL){memcpy(output, one, length);output[length] = 0;}fprintf(fd, "%s : %s : %s\n", arrTextStr[i], arrPatternStr[i], output);
+	}
+	fprintf(fd, "\n");fprintf(fd, "\n");
+	for(i = 8; i < n; ++i)
+	{
+		length = strlen(arrPatternStr[i]);one = boyer_moore(arrTextStr[i], strlen(arrTextStr[i]), arrPatternStr[i], length, &oneVec);
+		if(one != NULL){memcpy(output, one, length);output[length] = 0;}
+		for(j = 0; j < oneVec.count; ++j)
+		{
+    			fprintf(fd, "%s : %s : %s\n", arrTextStr[i], arrPatternStr[i], output);
+		}
+		fprintf(fd, "\n");
+	}
+	fprintf(fd, "\n");
+	fflush(fd);
+	fclose(fd);
+	vector_free(&oneVec);
+}
+
+int main()
+{
+	build();
+	return 0;
+}
+
+tuned_boyer_moore.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include <math.h>
+#include <float.h>
+#include <time.h>
+#include <ctype.h>
+
+#ifndef NULL
+#define NULL ((void*) 0)
+#endif
+
+#define min(x, y) ({typeof(x) inner_one = (x);typeof(y) inner_two = (y);(void)(&inner_one == &inner_two);inner_one < inner_two ? inner_one : inner_two;})
+#define max(x, y) ({typeof(x) inner_one = (x);typeof(y) inner_two = (y);(void)(&inner_one == &inner_two);inner_one > inner_two ? inner_one : inner_two;})
+
+FILE *fd;
+int n;
+char arrTextStr[64][128];
+char arrPatternStr[64][128];
+
+typedef struct {int count;int max;void **mem;} vector_t;
+
+void vector_init(vector_t *vec){vec->count = 0;vec->max = 0;vec->mem = NULL;}
+void vector_free(vector_t *vec){if(vec->mem != NULL){free(vec->mem);}vector_init(vec);}
+void vector_get(vector_t *vec, int index, void **item){if(index >= 0 && index < vec->count){*item = vec->mem[index];}}
+
+int vector_reserve(vector_t *vec, int size)
+{
+	int max;void *temp;max = 0;
+	if(size <= vec->max){return 1;}
+	else if(vec->max == 0 && size > 0){max = 8;if(size > 8){do{max *= 2;}while(size > max);}}
+	else if(vec->max > 0 && size > vec->max){max = vec->max;do{max *= 2;}while(size > max);}
+	if(max > 0)
+	{
+		temp = NULL;temp = realloc(vec->mem, max * sizeof(void *));
+		if(temp != NULL){vec->mem = temp;vec->max = max;return 1;}else{return 0;}
+	}
+	else {return 1;}
+}
+
+int vector_add(vector_t *vec, void *item)
+{
+	if(vector_reserve(vec, vec->count + 1) == 1){vec->mem[vec->count] = item;vec->count++;return 1;}else{return 0;}
+}
+
+void boyer_moore_makeBadTable(char *pattern, int m, int *badTable)
+{
+	int i;for(i = 0;i < 256;i++){badTable[i] = m;}for(i = 0;i < m-1;i++){badTable[(uint8_t)(pattern[i])] = ((m-1)-i);}
+}
+
+char * tuned_boyer_moore(char *text, int n, char *pattern, int m, vector_t *vec)
+{
+	int badTable[256];int index;int one;int two;int result;if(text == NULL){return NULL;}if(n <= 0){return NULL;}if(pattern == NULL){return NULL;}
+	if(m <= 0){return NULL;}if(m > n){return NULL;}result = -1;if(vec != NULL){vector_free(vec);}boyer_moore_makeBadTable(pattern, m, badTable);
+	index = 0;one = badTable[(uint8_t)(pattern[m-1])];badTable[(uint8_t)(pattern[m-1])] = 0;
+	while(index <= (n-m))
+	{
+		two = badTable[(uint8_t)(text[index+m-1])];
+		if(two != 0){index += two;}
+		else
+		{
+			if(memcmp((text+index), pattern, m) == 0){if(result == -1){result = index;}if(vec != NULL){vector_add(vec, (text+index));}}index += one;
+		}
+	}
+	if(result == -1){return NULL;}return (text+result);
+}
+
+void build()
+{
+	int i;int j;uint32_t length;vector_t oneVec;char *one;char output[128];memset(arrTextStr,0,sizeof(arrTextStr));memset(arrPatternStr,0,sizeof(arrPatternStr));
+	memset(output,0,sizeof(output));n = 14;vector_init(&oneVec);
+	strcpy(arrTextStr[0],"weiyayunabcdefgh") ;strcpy(arrPatternStr[0],"we");
+	strcpy(arrTextStr[1],"weiyayunabcdefgh") ;strcpy(arrPatternStr[1],"iy");
+	strcpy(arrTextStr[2],"weiyayunabcdefgh") ;strcpy(arrPatternStr[2],"ay");
+	strcpy(arrTextStr[3],"weiyayunabcdefgh") ;strcpy(arrPatternStr[3],"un");
+	strcpy(arrTextStr[4],"weiyayunabcdefgh") ;strcpy(arrPatternStr[4],"ab");
+	strcpy(arrTextStr[5],"weiyayunabcdefgh") ;strcpy(arrPatternStr[5],"cd");
+	strcpy(arrTextStr[6],"weiyayunabcdefgh") ;strcpy(arrPatternStr[6],"ef");
+	strcpy(arrTextStr[7],"weiyayunabcdefgh") ;strcpy(arrPatternStr[7],"gh");
+	strcpy(arrTextStr[8],"weiyayunabcdefgh") ;strcpy(arrPatternStr[8],"y");
+	strcpy(arrTextStr[9],"weiyayunabcdefgh") ;strcpy(arrPatternStr[9],"e");
+	strcpy(arrTextStr[10],"aaaaaaaaaaaaaaaa") ;strcpy(arrPatternStr[10],"aa");
+	strcpy(arrTextStr[11],"abababababababab") ;strcpy(arrPatternStr[11],"bab");
+	strcpy(arrTextStr[12],"abababcbabacabcb") ;strcpy(arrPatternStr[12],"bab");
+	strcpy(arrTextStr[13],"deabcdeabcfgabcfgabcabhiabcjk") ;strcpy(arrPatternStr[13],"abc");
+	fd=fopen("out.txt", "wb");
+	for(i = 0; i < 8; ++i)
+	{
+		length = strlen(arrPatternStr[i]);one = tuned_boyer_moore(arrTextStr[i], strlen(arrTextStr[i]), arrPatternStr[i], length, NULL);
+		if(one != NULL){memcpy(output, one, length);output[length] = 0;}fprintf(fd, "%s : %s : %s\n", arrTextStr[i], arrPatternStr[i], output);
+	}
+	fprintf(fd, "\n");fprintf(fd, "\n");
+	for(i = 8; i < n; ++i)
+	{
+		length = strlen(arrPatternStr[i]);one = tuned_boyer_moore(arrTextStr[i], strlen(arrTextStr[i]), arrPatternStr[i], length, &oneVec);
+		if(one != NULL){memcpy(output, one, length);output[length] = 0;}
+		for(j = 0; j < oneVec.count; ++j)
+		{
+    	fprintf(fd, "%s : %s : %s\n", arrTextStr[i], arrPatternStr[i], output);
+		}
+		fprintf(fd, "\n");
+	}
+	fprintf(fd, "\n");
+	fflush(fd);
+	fclose(fd);
+	vector_free(&oneVec);
+}
+
+int main()
+{
+	build();
+	return 0;
+}
+
+shift_and.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include <math.h>
+#include <float.h>
+#include <time.h>
+#include <ctype.h>
+
+#ifndef NULL
+#define NULL ((void*) 0)
+#endif
+
+#define min(x, y) ({typeof(x) inner_one = (x);typeof(y) inner_two = (y);(void)(&inner_one == &inner_two);inner_one < inner_two ? inner_one : inner_two;})
+#define max(x, y) ({typeof(x) inner_one = (x);typeof(y) inner_two = (y);(void)(&inner_one == &inner_two);inner_one > inner_two ? inner_one : inner_two;})
+
+FILE *fd;
+int n;
+char arrTextStr[64][128];
+char arrPatternStr[64][128];
+
+typedef struct {uint32_t count;uint32_t max;void **mem;} vector_t;
+
+void vector_init(vector_t *vec){vec->count = 0;vec->max = 0;vec->mem = NULL;}
+void vector_free(vector_t *vec){if(vec->mem != NULL){free(vec->mem);}vector_init(vec);}
+void vector_get(vector_t *vec, int index, void **item){if(index >= 0 && index < vec->count){*item = vec->mem[index];}}
+
+int vector_reserve(vector_t *vec, int size)
+{
+	int max;void *temp;max = 0;
+	if(size <= vec->max){return 1;}
+	else if(vec->max == 0 && size > 0){max = 8;if(size > 8){do{max *= 2;}while(size > max);}}
+	else if(vec->max > 0 && size > vec->max){max = vec->max;do{max *= 2;}while(size > max);}
+	if(max > 0)
+	{
+		temp = NULL;temp = realloc(vec->mem, max * sizeof(void *));
+		if(temp != NULL){vec->mem = temp;vec->max = max;return 1;}else{return 0;}
+	}
+	else {return 1;}
+}
+
+int vector_add(vector_t *vec, void *item)
+{
+	if(vector_reserve(vec, vec->count + 1) == 1){vec->mem[vec->count] = item;vec->count++;return 1;}else{return 0;}
+}
+
+void shift_and_makeTable(char *pattern, uint32_t m, uint64_t *table)
+{
+	uint32_t index;for(index = 0;index < m;index++){table[(uint8_t)(pattern[index])] |= (1ULL << index);}
+}
+char * shift_and(char *text, uint32_t n, char *pattern, uint32_t m, vector_t *vec)
+{
+	uint64_t table[256];uint64_t one;uint64_t two;uint32_t i;int result;if(text == NULL){return NULL;}if(n <= 0){return NULL;}if(pattern == NULL){return NULL;}
+	if(m <= 0){return NULL;}if(m > n){return NULL;}if(m > 64){return NULL;}result = -1;if(vec != NULL){vector_free(vec);}
+	memset(table,0,sizeof(table));shift_and_makeTable(pattern, m, table);one = 0ULL;two = (1ULL << (m-1));
+	for(i = 0; i < n; i++)
+	{
+		one = (((one << 1) | 1ULL) & table[(uint8_t)(text[i])]);
+		if((one & two) != 0ULL)
+		{
+			if(result == -1){result = (i+1-m);}if(vec != NULL){vector_add(vec, (text+(i+1-m)));}
+		}
+	}
+	if(result == -1){return NULL;}return (text+result);
+}
+
+void build()
+{
+	int i;int j;uint32_t length;vector_t oneVec;char *one;char output[128];memset(arrTextStr,0,sizeof(arrTextStr));memset(arrPatternStr,0,sizeof(arrPatternStr));
+	memset(output,0,sizeof(output));n = 14;vector_init(&oneVec);
+	strcpy(arrTextStr[0],"weiyayunabcdefgh") ;strcpy(arrPatternStr[0],"we");
+	strcpy(arrTextStr[1],"weiyayunabcdefgh") ;strcpy(arrPatternStr[1],"iy");
+	strcpy(arrTextStr[2],"weiyayunabcdefgh") ;strcpy(arrPatternStr[2],"ay");
+	strcpy(arrTextStr[3],"weiyayunabcdefgh") ;strcpy(arrPatternStr[3],"un");
+	strcpy(arrTextStr[4],"weiyayunabcdefgh") ;strcpy(arrPatternStr[4],"ab");
+	strcpy(arrTextStr[5],"weiyayunabcdefgh") ;strcpy(arrPatternStr[5],"cd");
+	strcpy(arrTextStr[6],"weiyayunabcdefgh") ;strcpy(arrPatternStr[6],"ef");
+	strcpy(arrTextStr[7],"weiyayunabcdefgh") ;strcpy(arrPatternStr[7],"gh");
+	strcpy(arrTextStr[8],"weiyayunabcdefgh") ;strcpy(arrPatternStr[8],"y");
+	strcpy(arrTextStr[9],"weiyayunabcdefgh") ;strcpy(arrPatternStr[9],"e");
+	strcpy(arrTextStr[10],"aaaaaaaaaaaaaaaa") ;strcpy(arrPatternStr[10],"aa");
+	strcpy(arrTextStr[11],"abababababababab") ;strcpy(arrPatternStr[11],"bab");
+	strcpy(arrTextStr[12],"abababcbabacabcb") ;strcpy(arrPatternStr[12],"bab");
+	strcpy(arrTextStr[13],"deabcdeabcfgabcfgabcabhiabcjk") ;strcpy(arrPatternStr[13],"abc");
+	fd=fopen("out.txt", "wb");
+	for(i = 0; i < 8; ++i)
+	{
+		length = strlen(arrPatternStr[i]);one = shift_and(arrTextStr[i], strlen(arrTextStr[i]), arrPatternStr[i], length, NULL);
+		if(one != NULL){memcpy(output, one, length);output[length] = 0;}fprintf(fd, "%s : %s : %s\n", arrTextStr[i], arrPatternStr[i], output);
+	}
+	fprintf(fd, "\n");fprintf(fd, "\n");
+	for(i = 8; i < n; ++i)
+	{
+		length = strlen(arrPatternStr[i]);one = shift_and(arrTextStr[i], strlen(arrTextStr[i]), arrPatternStr[i], length, &oneVec);
+		if(one != NULL){memcpy(output, one, length);output[length] = 0;}
+		for(j = 0; j < oneVec.count; ++j)
+		{
+    	fprintf(fd, "%s : %s : %s\n", arrTextStr[i], arrPatternStr[i], output);
+		}
+		fprintf(fd, "\n");
+	}
+	fprintf(fd, "\n");
+	fflush(fd);
+	fclose(fd);
+	vector_free(&oneVec);
+}
+
+int main()
+{
+	build();
+	return 0;
+}
+
+shift_or.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include <math.h>
+#include <float.h>
+#include <time.h>
+#include <ctype.h>
+
+#ifndef NULL
+#define NULL ((void*) 0)
+#endif
+
+#define min(x, y) ({typeof(x) inner_one = (x);typeof(y) inner_two = (y);(void)(&inner_one == &inner_two);inner_one < inner_two ? inner_one : inner_two;})
+#define max(x, y) ({typeof(x) inner_one = (x);typeof(y) inner_two = (y);(void)(&inner_one == &inner_two);inner_one > inner_two ? inner_one : inner_two;})
+
+FILE *fd;
+int n;
+char arrTextStr[64][128];
+char arrPatternStr[64][128];
+
+typedef struct {uint32_t count;uint32_t max;void **mem;} vector_t;
+
+void vector_init(vector_t *vec){vec->count = 0;vec->max = 0;vec->mem = NULL;}
+void vector_free(vector_t *vec){if(vec->mem != NULL){free(vec->mem);}vector_init(vec);}
+void vector_get(vector_t *vec, int index, void **item){if(index >= 0 && index < vec->count){*item = vec->mem[index];}}
+
+int vector_reserve(vector_t *vec, int size)
+{
+	int max;void *temp;max = 0;
+	if(size <= vec->max){return 1;}
+	else if(vec->max == 0 && size > 0){max = 8;if(size > 8){do{max *= 2;}while(size > max);}}
+	else if(vec->max > 0 && size > vec->max){max = vec->max;do{max *= 2;}while(size > max);}
+	if(max > 0)
+	{
+		temp = NULL;temp = realloc(vec->mem, max * sizeof(void *));
+		if(temp != NULL){vec->mem = temp;vec->max = max;return 1;}else{return 0;}
+	}
+	else {return 1;}
+}
+
+int vector_add(vector_t *vec, void *item)
+{
+	if(vector_reserve(vec, vec->count + 1) == 1){vec->mem[vec->count] = item;vec->count++;return 1;}else{return 0;}
+}
+
+void shift_or_makeTable(char *pattern, uint32_t m, uint64_t *table)
+{
+	uint32_t index;uint64_t shift;shift = 1ULL;for(index = 0;index < m;index++){table[(uint8_t)(pattern[index])] &= (~shift);shift <<= 1;}
+}
+char * shift_or(char *text, uint32_t n, char *pattern, uint32_t m, vector_t *vec)
+{
+	uint64_t table[256];uint64_t one;uint64_t two;uint32_t i;int result;if(text == NULL){return NULL;}if(n <= 0){return NULL;}if(pattern == NULL){return NULL;}
+	if(m <= 0){return NULL;}if(m > n){return NULL;}if(m > 64){return NULL;}result = -1;if(vec != NULL){vector_free(vec);}
+	for(i = 0;i < 256;i++){table[i] = (~0ULL);}shift_or_makeTable(pattern, m, table);one = (~0ULL);two = (~(1ULL << (m-1)));
+	for(i = 0; i < n; i++)
+	{
+		one = ((one << 1) | table[(uint8_t)(text[i])]);
+		if((~(one | two)) != 0ULL)
+		{
+			if(result == -1){result = (i+1-m);}if(vec != NULL){vector_add(vec, (text+(i+1-m)));}
+		}
+	}
+	if(result == -1){return NULL;}return (text+result);
+}
+
+void build()
+{
+	int i;int j;uint32_t length;vector_t oneVec;char *one;char output[128];memset(arrTextStr,0,sizeof(arrTextStr));memset(arrPatternStr,0,sizeof(arrPatternStr));
+	memset(output,0,sizeof(output));n = 14;vector_init(&oneVec);
+	strcpy(arrTextStr[0],"weiyayunabcdefgh") ;strcpy(arrPatternStr[0],"we");
+	strcpy(arrTextStr[1],"weiyayunabcdefgh") ;strcpy(arrPatternStr[1],"iy");
+	strcpy(arrTextStr[2],"weiyayunabcdefgh") ;strcpy(arrPatternStr[2],"ay");
+	strcpy(arrTextStr[3],"weiyayunabcdefgh") ;strcpy(arrPatternStr[3],"un");
+	strcpy(arrTextStr[4],"weiyayunabcdefgh") ;strcpy(arrPatternStr[4],"ab");
+	strcpy(arrTextStr[5],"weiyayunabcdefgh") ;strcpy(arrPatternStr[5],"cd");
+	strcpy(arrTextStr[6],"weiyayunabcdefgh") ;strcpy(arrPatternStr[6],"ef");
+	strcpy(arrTextStr[7],"weiyayunabcdefgh") ;strcpy(arrPatternStr[7],"gh");
+	strcpy(arrTextStr[8],"weiyayunabcdefgh") ;strcpy(arrPatternStr[8],"y");
+	strcpy(arrTextStr[9],"weiyayunabcdefgh") ;strcpy(arrPatternStr[9],"e");
+	strcpy(arrTextStr[10],"aaaaaaaaaaaaaaaa") ;strcpy(arrPatternStr[10],"aa");
+	strcpy(arrTextStr[11],"abababababababab") ;strcpy(arrPatternStr[11],"bab");
+	strcpy(arrTextStr[12],"abababcbabacabcb") ;strcpy(arrPatternStr[12],"bab");
+	strcpy(arrTextStr[13],"deabcdeabcfgabcfgabcabhiabcjk") ;strcpy(arrPatternStr[13],"abc");
+	fd=fopen("out.txt", "wb");
+	for(i = 0; i < 8; ++i)
+	{
+		length = strlen(arrPatternStr[i]);one = shift_or(arrTextStr[i], strlen(arrTextStr[i]), arrPatternStr[i], length, NULL);
+		if(one != NULL){memcpy(output, one, length);output[length] = 0;}fprintf(fd, "%s : %s : %s\n", arrTextStr[i], arrPatternStr[i], output);
+	}
+	fprintf(fd, "\n");fprintf(fd, "\n");
+	for(i = 8; i < n; ++i)
+	{
+		length = strlen(arrPatternStr[i]);one = shift_or(arrTextStr[i], strlen(arrTextStr[i]), arrPatternStr[i], length, &oneVec);
+		if(one != NULL){memcpy(output, one, length);output[length] = 0;}
+		for(j = 0; j < oneVec.count; ++j)
+		{
+    	fprintf(fd, "%s : %s : %s\n", arrTextStr[i], arrPatternStr[i], output);
+		}
+		fprintf(fd, "\n");
+	}
+	fprintf(fd, "\n");
+	fflush(fd);
+	fclose(fd);
+	vector_free(&oneVec);
+}
+
+int main()
+{
+	build();
+	return 0;
+}
+
+finite_state_automaton_search.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include <math.h>
+#include <float.h>
+#include <time.h>
+#include <ctype.h>
+
+#ifndef NULL
+#define NULL ((void*) 0)
+#endif
+
+#define min(x, y) ({typeof(x) inner_one = (x);typeof(y) inner_two = (y);(void)(&inner_one == &inner_two);inner_one < inner_two ? inner_one : inner_two;})
+#define max(x, y) ({typeof(x) inner_one = (x);typeof(y) inner_two = (y);(void)(&inner_one == &inner_two);inner_one > inner_two ? inner_one : inner_two;})
+
+FILE *fd;
+int n;
+char arrTextStr[64][128];
+char arrPatternStr[64][128];
+
+typedef struct {uint32_t count;uint32_t max;void **mem;} vector_t;
+
+void vector_init(vector_t *vec){vec->count = 0;vec->max = 0;vec->mem = NULL;}
+void vector_free(vector_t *vec){if(vec->mem != NULL){free(vec->mem);}vector_init(vec);}
+void vector_get(vector_t *vec, int index, void **item){if(index >= 0 && index < vec->count){*item = vec->mem[index];}}
+
+int vector_reserve(vector_t *vec, int size)
+{
+	int max;void *temp;max = 0;
+	if(size <= vec->max){return 1;}
+	else if(vec->max == 0 && size > 0){max = 8;if(size > 8){do{max *= 2;}while(size > max);}}
+	else if(vec->max > 0 && size > vec->max){max = vec->max;do{max *= 2;}while(size > max);}
+	if(max > 0)
+	{
+		temp = NULL;temp = realloc(vec->mem, max * sizeof(void *));
+		if(temp != NULL){vec->mem = temp;vec->max = max;return 1;}else{return 0;}
+	}
+	else {return 1;}
+}
+
+int vector_add(vector_t *vec, void *item)
+{
+	if(vector_reserve(vec, vec->count + 1) == 1){vec->mem[vec->count] = item;vec->count++;return 1;}else{return 0;}
+}
+
+void finite_state_automaton_makeNext(char *pattern, uint32_t m, int *next)
+{
+	uint32_t index;uint32_t k;next[0] = 0;k = 0;
+	for(index = 1;index < m;index++)
+	{
+		while(k > 0 && pattern[k] != pattern[index]){k = next[k-1];}if(pattern[k] == pattern[index]){k++;}next[index] = k;
+	}
+}
+
+uint32_t finite_state_automaton_getNextState(char *pattern, uint32_t m, uint32_t state, uint8_t oneVal, int *next)
+{
+	uint32_t index;if(state == m){index = next[state-1];}else{index = state;}
+	while(index > 0 && (uint8_t)(pattern[index]) != oneVal){index = next[index-1];}if((uint8_t)(pattern[index]) == oneVal){index++;}
+	return index;
+}
+
+void finite_state_automaton_makeTable(char *pattern, uint32_t m, uint32_t *table, int *next)
+{
+	uint32_t state;uint32_t oneVal;uint32_t *onePtr;
+	for(state = 0;state <= m;state++)
+	{
+		for(oneVal = 0;oneVal < 256;oneVal++)
+		{
+			onePtr = (table+((state*256)+oneVal));*onePtr = finite_state_automaton_getNextState(pattern, m, state, (uint8_t)oneVal, next);
+		}
+	}
+}
+char * finite_state_automaton_search(char *text, uint32_t n, char *pattern, uint32_t m, vector_t *vec)
+{
+	int *next;uint32_t *table;uint32_t *onePtr;uint32_t i;uint32_t index;int result;if(text == NULL){return NULL;}if(n <= 0){return NULL;}if(pattern == NULL){return NULL;}
+	if(m <= 0){return NULL;}if(m > n){return NULL;}next = NULL;next = malloc(m*sizeof(int));if(next == NULL){return NULL;}
+	table = NULL;table = malloc(((m+1)*256*sizeof(uint32_t)));if(table == NULL){free(next);return NULL;}
+	result = -1;if(vec != NULL){vector_free(vec);}finite_state_automaton_makeNext(pattern, m, next);
+	finite_state_automaton_makeTable(pattern, m, table, next);index = 0;
+	for(i = 0; i < n; i++)
+	{
+		onePtr = (table+((index*256)+(uint8_t)(text[i])));index = (*onePtr);
+		if(index == m)
+		{
+			if(result == -1){result = (i+1-m);}if(vec != NULL){vector_add(vec, (text+(i+1-m)));}
+		}
+	}
+	free(next);free(table);if(result == -1){return NULL;}return (text+result);
+}
+
+void build()
+{
+	int i;int j;uint32_t length;vector_t oneVec;char *one;char output[128];memset(arrTextStr,0,sizeof(arrTextStr));memset(arrPatternStr,0,sizeof(arrPatternStr));
+	memset(output,0,sizeof(output));n = 14;vector_init(&oneVec);
+	strcpy(arrTextStr[0],"weiyayunabcdefgh") ;strcpy(arrPatternStr[0],"we");
+	strcpy(arrTextStr[1],"weiyayunabcdefgh") ;strcpy(arrPatternStr[1],"iy");
+	strcpy(arrTextStr[2],"weiyayunabcdefgh") ;strcpy(arrPatternStr[2],"ay");
+	strcpy(arrTextStr[3],"weiyayunabcdefgh") ;strcpy(arrPatternStr[3],"un");
+	strcpy(arrTextStr[4],"weiyayunabcdefgh") ;strcpy(arrPatternStr[4],"ab");
+	strcpy(arrTextStr[5],"weiyayunabcdefgh") ;strcpy(arrPatternStr[5],"cd");
+	strcpy(arrTextStr[6],"weiyayunabcdefgh") ;strcpy(arrPatternStr[6],"ef");
+	strcpy(arrTextStr[7],"weiyayunabcdefgh") ;strcpy(arrPatternStr[7],"gh");
+	strcpy(arrTextStr[8],"weiyayunabcdefgh") ;strcpy(arrPatternStr[8],"y");
+	strcpy(arrTextStr[9],"weiyayunabcdefgh") ;strcpy(arrPatternStr[9],"e");
+	strcpy(arrTextStr[10],"aaaaaaaaaaaaaaaa") ;strcpy(arrPatternStr[10],"aa");
+	strcpy(arrTextStr[11],"abababababababab") ;strcpy(arrPatternStr[11],"bab");
+	strcpy(arrTextStr[12],"abababcbabacabcb") ;strcpy(arrPatternStr[12],"bab");
+	strcpy(arrTextStr[13],"deabcdeabcfgabcfgabcabhiabcjk") ;strcpy(arrPatternStr[13],"abc");
+	fd=fopen("out.txt", "wb");
+	for(i = 0; i < 8; ++i)
+	{
+		length = strlen(arrPatternStr[i]);one = finite_state_automaton_search(arrTextStr[i], strlen(arrTextStr[i]), arrPatternStr[i], length, NULL);
+		if(one != NULL){memcpy(output, one, length);output[length] = 0;}fprintf(fd, "%s : %s : %s\n", arrTextStr[i], arrPatternStr[i], output);
+	}
+	fprintf(fd, "\n");fprintf(fd, "\n");
+	for(i = 8; i < n; ++i)
+	{
+		length = strlen(arrPatternStr[i]);one = finite_state_automaton_search(arrTextStr[i], strlen(arrTextStr[i]), arrPatternStr[i], length, &oneVec);
+		if(one != NULL){memcpy(output, one, length);output[length] = 0;}
+		for(j = 0; j < oneVec.count; ++j)
+		{
+    	fprintf(fd, "%s : %s : %s\n", arrTextStr[i], arrPatternStr[i], output);
+		}
+		fprintf(fd, "\n");
+	}
+	fprintf(fd, "\n");
+	fflush(fd);
+	fclose(fd);
+	vector_free(&oneVec);
+}
+
+int main()
+{
+	build();
+	return 0;
+}
+
+smith_search.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include <math.h>
+#include <float.h>
+#include <time.h>
+#include <ctype.h>
+
+#ifndef NULL
+#define NULL ((void*) 0)
+#endif
+
+#define min(x, y) ({typeof(x) inner_one = (x);typeof(y) inner_two = (y);(void)(&inner_one == &inner_two);inner_one < inner_two ? inner_one : inner_two;})
+#define max(x, y) ({typeof(x) inner_one = (x);typeof(y) inner_two = (y);(void)(&inner_one == &inner_two);inner_one > inner_two ? inner_one : inner_two;})
+
+FILE *fd;
+int n;
+char arrTextStr[64][128];
+char arrPatternStr[64][128];
+
+typedef struct {int count;int max;void **mem;} vector_t;
+
+void vector_init(vector_t *vec){vec->count = 0;vec->max = 0;vec->mem = NULL;}
+void vector_free(vector_t *vec){if(vec->mem != NULL){free(vec->mem);}vector_init(vec);}
+void vector_get(vector_t *vec, int index, void **item){if(index >= 0 && index < vec->count){*item = vec->mem[index];}}
+
+int vector_reserve(vector_t *vec, int size)
+{
+	int max;void *temp;max = 0;
+	if(size <= vec->max){return 1;}
+	else if(vec->max == 0 && size > 0){max = 8;if(size > 8){do{max *= 2;}while(size > max);}}
+	else if(vec->max > 0 && size > vec->max){max = vec->max;do{max *= 2;}while(size > max);}
+	if(max > 0)
+	{
+		temp = NULL;temp = realloc(vec->mem, max * sizeof(void *));
+		if(temp != NULL){vec->mem = temp;vec->max = max;return 1;}else{return 0;}
+	}
+	else {return 1;}
+}
+
+int vector_add(vector_t *vec, void *item)
+{
+	if(vector_reserve(vec, vec->count + 1) == 1){vec->mem[vec->count] = item;vec->count++;return 1;}else{return 0;}
+}
+
+void boyer_moore_makeBadTable(char *pattern, int m, int *badTable)
+{
+	int i;for(i = 0;i < 256;i++){badTable[i] = m;}for(i = 0;i < m-1;i++){badTable[(uint8_t)(pattern[i])] = ((m-1)-i);}
+}
+
+void sunday_makeBadTable(char *pattern, int m, int *badTable)
+{
+	int i;for(i = 0;i < 256;i++){badTable[i] = (m+1);}for(i = 0;i < m;i++){badTable[(uint8_t)(pattern[i])] = (m-i);}
+}
+
+char * smith_search(char *text, int n, char *pattern, int m, vector_t *vec)
+{
+	int badTable[256];int sundayBadTable[256];int index;int one;int two;int three;int result;if(text == NULL){return NULL;}if(n <= 0){return NULL;}
+	if(pattern == NULL){return NULL;}if(m <= 0){return NULL;}if(m > n){return NULL;}result = -1;if(vec != NULL){vector_free(vec);}
+	boyer_moore_makeBadTable(pattern, m, badTable);sunday_makeBadTable(pattern, m, sundayBadTable);
+	index = 0;one = badTable[(uint8_t)(pattern[m-1])];badTable[(uint8_t)(pattern[m-1])] = 0;
+	while(index <= (n-m))
+	{
+		two = badTable[(uint8_t)(text[index+m-1])];if(index < (n-m)){three = sundayBadTable[(uint8_t)(text[index+m])];}else{three = 1;}
+		if(two != 0){two = max(two, three);index += two;}
+		else
+		{
+			if(memcmp((text+index), pattern, m) == 0){if(result == -1){result = index;}if(vec != NULL){vector_add(vec, (text+index));}}
+			two = max(one, three);index += two;
+		}
+	}
+	if(result == -1){return NULL;}return (text+result);
+}
+
+void build()
+{
+	int i;int j;uint32_t length;vector_t oneVec;char *one;char output[128];memset(arrTextStr,0,sizeof(arrTextStr));memset(arrPatternStr,0,sizeof(arrPatternStr));
+	memset(output,0,sizeof(output));n = 14;vector_init(&oneVec);
+	strcpy(arrTextStr[0],"weiyayunabcdefgh") ;strcpy(arrPatternStr[0],"we");
+	strcpy(arrTextStr[1],"weiyayunabcdefgh") ;strcpy(arrPatternStr[1],"iy");
+	strcpy(arrTextStr[2],"weiyayunabcdefgh") ;strcpy(arrPatternStr[2],"ay");
+	strcpy(arrTextStr[3],"weiyayunabcdefgh") ;strcpy(arrPatternStr[3],"un");
+	strcpy(arrTextStr[4],"weiyayunabcdefgh") ;strcpy(arrPatternStr[4],"ab");
+	strcpy(arrTextStr[5],"weiyayunabcdefgh") ;strcpy(arrPatternStr[5],"cd");
+	strcpy(arrTextStr[6],"weiyayunabcdefgh") ;strcpy(arrPatternStr[6],"ef");
+	strcpy(arrTextStr[7],"weiyayunabcdefgh") ;strcpy(arrPatternStr[7],"gh");
+	strcpy(arrTextStr[8],"weiyayunabcdefgh") ;strcpy(arrPatternStr[8],"y");
+	strcpy(arrTextStr[9],"weiyayunabcdefgh") ;strcpy(arrPatternStr[9],"e");
+	strcpy(arrTextStr[10],"aaaaaaaaaaaaaaaa") ;strcpy(arrPatternStr[10],"aa");
+	strcpy(arrTextStr[11],"abababababababab") ;strcpy(arrPatternStr[11],"bab");
+	strcpy(arrTextStr[12],"abababcbabacabcb") ;strcpy(arrPatternStr[12],"bab");
+	strcpy(arrTextStr[13],"deabcdeabcfgabcfgabcabhiabcjk") ;strcpy(arrPatternStr[13],"abc");
+	fd=fopen("out.txt", "wb");
+	for(i = 0; i < 8; ++i)
+	{
+		length = strlen(arrPatternStr[i]);one = smith_search(arrTextStr[i], strlen(arrTextStr[i]), arrPatternStr[i], length, NULL);
+		if(one != NULL){memcpy(output, one, length);output[length] = 0;}fprintf(fd, "%s : %s : %s\n", arrTextStr[i], arrPatternStr[i], output);
+	}
+	fprintf(fd, "\n");fprintf(fd, "\n");
+	for(i = 8; i < n; ++i)
+	{
+		length = strlen(arrPatternStr[i]);one = smith_search(arrTextStr[i], strlen(arrTextStr[i]), arrPatternStr[i], length, &oneVec);
+		if(one != NULL){memcpy(output, one, length);output[length] = 0;}
+		for(j = 0; j < oneVec.count; ++j)
+		{
+    	fprintf(fd, "%s : %s : %s\n", arrTextStr[i], arrPatternStr[i], output);
+		}
+		fprintf(fd, "\n");
+	}
+	fprintf(fd, "\n");
+	fflush(fd);
+	fclose(fd);
+	vector_free(&oneVec);
+}
+
+int main()
+{
+	build();
+	return 0;
+}
+
+raita_search.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include <math.h>
+#include <float.h>
+#include <time.h>
+#include <ctype.h>
+
+#ifndef NULL
+#define NULL ((void*) 0)
+#endif
+
+#define min(x, y) ({typeof(x) inner_one = (x);typeof(y) inner_two = (y);(void)(&inner_one == &inner_two);inner_one < inner_two ? inner_one : inner_two;})
+#define max(x, y) ({typeof(x) inner_one = (x);typeof(y) inner_two = (y);(void)(&inner_one == &inner_two);inner_one > inner_two ? inner_one : inner_two;})
+
+FILE *fd;
+int n;
+char arrTextStr[64][128];
+char arrPatternStr[64][128];
+
+typedef struct {int count;int max;void **mem;} vector_t;
+
+void vector_init(vector_t *vec){vec->count = 0;vec->max = 0;vec->mem = NULL;}
+void vector_free(vector_t *vec){if(vec->mem != NULL){free(vec->mem);}vector_init(vec);}
+void vector_get(vector_t *vec, int index, void **item){if(index >= 0 && index < vec->count){*item = vec->mem[index];}}
+
+int vector_reserve(vector_t *vec, int size)
+{
+	int max;void *temp;max = 0;
+	if(size <= vec->max){return 1;}
+	else if(vec->max == 0 && size > 0){max = 8;if(size > 8){do{max *= 2;}while(size > max);}}
+	else if(vec->max > 0 && size > vec->max){max = vec->max;do{max *= 2;}while(size > max);}
+	if(max > 0)
+	{
+		temp = NULL;temp = realloc(vec->mem, max * sizeof(void *));
+		if(temp != NULL){vec->mem = temp;vec->max = max;return 1;}else{return 0;}
+	}
+	else {return 1;}
+}
+
+int vector_add(vector_t *vec, void *item)
+{
+	if(vector_reserve(vec, vec->count + 1) == 1){vec->mem[vec->count] = item;vec->count++;return 1;}else{return 0;}
+}
+
+void boyer_moore_makeBadTable(char *pattern, int m, int *badTable)
+{
+	int i;for(i = 0;i < 256;i++){badTable[i] = m;}for(i = 0;i < m-1;i++){badTable[(uint8_t)(pattern[i])] = ((m-1)-i);}
+}
+
+void sunday_makeBadTable(char *pattern, int m, int *badTable)
+{
+	int i;for(i = 0;i < 256;i++){badTable[i] = (m+1);}for(i = 0;i < m;i++){badTable[(uint8_t)(pattern[i])] = (m-i);}
+}
+
+char * raita_search(char *text, int n, char *pattern, int m, vector_t *vec)
+{
+	int badTable[256];int sundayBadTable[256];int index;int one;int two;int three;int result;if(text == NULL){return NULL;}if(n <= 0){return NULL;}
+	if(pattern == NULL){return NULL;}if(m <= 0){return NULL;}if(m > n){return NULL;}result = -1;if(vec != NULL){vector_free(vec);}
+	boyer_moore_makeBadTable(pattern, m, badTable);sunday_makeBadTable(pattern, m, sundayBadTable);
+	index = 0;one = badTable[(uint8_t)(pattern[m-1])];badTable[(uint8_t)(pattern[m-1])] = 0;
+	while(index <= (n-m))
+	{
+		two = badTable[(uint8_t)(text[index+m-1])];if(index < (n-m)){three = sundayBadTable[(uint8_t)(text[index+m])];}else{three = 1;}
+		if(two != 0){two = max(two, three);index += two;}
+		else
+		{
+			if(text[index] == pattern[0] && text[index+(m/2)] == pattern[(m/2)])
+			{
+				if(memcmp((text+index), pattern, m) == 0){if(result == -1){result = index;}if(vec != NULL){vector_add(vec, (text+index));}}
+			}
+			two = max(one, three);index += two;
+		}
+	}
+	if(result == -1){return NULL;}return (text+result);
+}
+
+void build()
+{
+	int i;int j;uint32_t length;vector_t oneVec;char *one;char output[128];memset(arrTextStr,0,sizeof(arrTextStr));memset(arrPatternStr,0,sizeof(arrPatternStr));
+	memset(output,0,sizeof(output));n = 14;vector_init(&oneVec);
+	strcpy(arrTextStr[0],"weiyayunabcdefgh") ;strcpy(arrPatternStr[0],"we");
+	strcpy(arrTextStr[1],"weiyayunabcdefgh") ;strcpy(arrPatternStr[1],"iy");
+	strcpy(arrTextStr[2],"weiyayunabcdefgh") ;strcpy(arrPatternStr[2],"ay");
+	strcpy(arrTextStr[3],"weiyayunabcdefgh") ;strcpy(arrPatternStr[3],"un");
+	strcpy(arrTextStr[4],"weiyayunabcdefgh") ;strcpy(arrPatternStr[4],"ab");
+	strcpy(arrTextStr[5],"weiyayunabcdefgh") ;strcpy(arrPatternStr[5],"cd");
+	strcpy(arrTextStr[6],"weiyayunabcdefgh") ;strcpy(arrPatternStr[6],"ef");
+	strcpy(arrTextStr[7],"weiyayunabcdefgh") ;strcpy(arrPatternStr[7],"gh");
+	strcpy(arrTextStr[8],"weiyayunabcdefgh") ;strcpy(arrPatternStr[8],"y");
+	strcpy(arrTextStr[9],"weiyayunabcdefgh") ;strcpy(arrPatternStr[9],"e");
+	strcpy(arrTextStr[10],"aaaaaaaaaaaaaaaa") ;strcpy(arrPatternStr[10],"aa");
+	strcpy(arrTextStr[11],"abababababababab") ;strcpy(arrPatternStr[11],"bab");
+	strcpy(arrTextStr[12],"abababcbabacabcb") ;strcpy(arrPatternStr[12],"bab");
+	strcpy(arrTextStr[13],"deabcdeabcfgabcfgabcabhiabcjk") ;strcpy(arrPatternStr[13],"abc");
+	fd=fopen("out.txt", "wb");
+	for(i = 0; i < 8; ++i)
+	{
+		length = strlen(arrPatternStr[i]);one = raita_search(arrTextStr[i], strlen(arrTextStr[i]), arrPatternStr[i], length, NULL);
+		if(one != NULL){memcpy(output, one, length);output[length] = 0;}fprintf(fd, "%s : %s : %s\n", arrTextStr[i], arrPatternStr[i], output);
+	}
+	fprintf(fd, "\n");fprintf(fd, "\n");
+	for(i = 8; i < n; ++i)
+	{
+		length = strlen(arrPatternStr[i]);one = raita_search(arrTextStr[i], strlen(arrTextStr[i]), arrPatternStr[i], length, &oneVec);
+		if(one != NULL){memcpy(output, one, length);output[length] = 0;}
+		for(j = 0; j < oneVec.count; ++j)
+		{
+    	fprintf(fd, "%s : %s : %s\n", arrTextStr[i], arrPatternStr[i], output);
+		}
+		fprintf(fd, "\n");
+	}
+	fprintf(fd, "\n");
+	fflush(fd);
+	fclose(fd);
+	vector_free(&oneVec);
+}
+
+int main()
+{
+	build();
+	return 0;
+}
+
+LSD.java
+package edu.princeton.cs.algs4;
+
+public class LSD {
+    private static final int R             = 256;   // extended ASCII alphabet size
+
+    // do not instantiate
+    private LSD() { }
+
+   /**  
+     * Rearranges the array of w-character strings in ascending order.
+     *
+     * @param a the array to be sorted
+     * @param w the number of characters per string
+     */
+    public static void sort(String[] a, int w) {
+        int n = a.length;
+        String[] aux = new String[n];
+
+        for (int d = w-1; d >= 0; d--) {
+            // sort by key-indexed counting on dth character
+
+            // compute frequency counts
+            int[] count = new int[R+1];
+            for (int i = 0; i < n; i++)
+                count[a[i].charAt(d) + 1]++;
+
+            // compute cumulates
+            for (int r = 0; r < R; r++)
+                count[r+1] += count[r];
+
+            // move data
+            for (int i = 0; i < n; i++)
+                aux[count[a[i].charAt(d)]++] = a[i];
+
+            // copy back
+            for (int i = 0; i < n; i++)
+                a[i] = aux[i];
+        }
+    }
+
+
+    /**
+     * Reads in a sequence of fixed-length strings from standard input;
+     * LSD radix sorts them;
+     * and prints them to standard output in ascending order.
+     *
+     * @param args the command-line arguments
+     */
+    public static void main(String[] args) {
+        String[] a = StdIn.readAllStrings();
+        int n = a.length;
+
+        // check that strings have fixed length
+        int w = a[0].length();
+        for (int i = 0; i < n; i++)
+            assert a[i].length() == w : "Strings must have fixed length";
+
+        // sort the strings
+        sort(a, w);
+
+        // print results
+        for (int i = 0; i < n; i++)
+            StdOut.println(a[i]);
+    }
+
+}
+
+MSD.java
+package edu.princeton.cs.algs4;
+
+public class MSD {
+    private static final int R             = 256;   // extended ASCII alphabet size
+    private static final int CUTOFF        =  15;   // cutoff to insertion sort
+
+    // do not instantiate
+    private MSD() { } 
+
+   /**
+     * Rearranges the array of extended ASCII strings in ascending order.
+     *
+     * @param a the array to be sorted
+     */
+    public static void sort(String[] a) {
+        int n = a.length;
+        String[] aux = new String[n];
+        sort(a, 0, n-1, 0, aux);
+    }
+
+    // return dth character of s, -1 if d = length of string
+    private static int charAt(String s, int d) {
+        assert d >= 0 && d <= s.length();
+        if (d == s.length()) return -1;
+        return s.charAt(d);
+    }
+
+    // sort from a[lo] to a[hi], starting at the dth character
+    private static void sort(String[] a, int lo, int hi, int d, String[] aux) {
+
+        // cutoff to insertion sort for small subarrays
+        if (hi <= lo + CUTOFF) {
+            insertion(a, lo, hi, d);
+            return;
+        }
+
+        // compute frequency counts
+        int[] count = new int[R+2];
+        for (int i = lo; i <= hi; i++) {
+            int c = charAt(a[i], d);
+            count[c+2]++;
+        }
+
+        // transform counts to indicies
+        for (int r = 0; r < R+1; r++)
+            count[r+1] += count[r];
+
+        // distribute
+        for (int i = lo; i <= hi; i++) {
+            int c = charAt(a[i], d);
+            aux[count[c+1]++] = a[i];
+        }
+
+        // copy back
+        for (int i = lo; i <= hi; i++) 
+            a[i] = aux[i - lo];
+
+
+        // recursively sort for each character (excludes sentinel -1)
+        for (int r = 0; r < R; r++)
+            sort(a, lo + count[r], lo + count[r+1] - 1, d+1, aux);
+    }
+
+
+    // insertion sort a[lo..hi], starting at dth character
+    private static void insertion(String[] a, int lo, int hi, int d) {
+        for (int i = lo + 1; i <= hi; i++)
+            for (int j = i; j > lo && less(a[j], a[j-1], d); j--)
+                exch(a, j, j-1);
+    }
+
+    // exchange a[i] and a[j]
+    private static void exch(String[] a, int i, int j) {
+        String temp = a[i];
+        a[i] = a[j];
+        a[j] = temp;
+    }
+
+    // is v less than w, starting at character d
+    private static boolean less(String v, String w, int d) {
+        // assert v.substring(0, d).equals(w.substring(0, d));
+        for (int i = d; i < Math.min(v.length(), w.length()); i++) {
+            if (v.charAt(i) < w.charAt(i)) return true;
+            if (v.charAt(i) > w.charAt(i)) return false;
+        }
+        return v.length() < w.length();
+    }
+
+
+    /**
+     * Reads in a sequence of extended ASCII strings from standard input;
+     * MSD radix sorts them;
+     * and prints them to standard output in ascending order.
+     *
+     * @param args the command-line arguments
+     */
+    public static void main(String[] args) {
+        String[] a = StdIn.readAllStrings();
+        int n = a.length;
+        sort(a);
+        for (int i = 0; i < n; i++)
+            StdOut.println(a[i]);
+    }
+
+}
+
+SuffixArray.java
+package edu.princeton.cs.algs4;
+
+import java.util.Arrays;
+
+public class SuffixArray {
+    private Suffix[] suffixes;
+
+    /**
+     * Initializes a suffix array for the given {@code text} string.
+     * @param text the input string
+     */
+    public SuffixArray(String text) {
+        int n = text.length();
+        this.suffixes = new Suffix[n];
+        for (int i = 0; i < n; i++)
+            suffixes[i] = new Suffix(text, i);
+        Arrays.sort(suffixes);
+    }
+
+    private static class Suffix implements Comparable<Suffix> {
+        private final String text;
+        private final int index;
+
+        private Suffix(String text, int index) {
+            this.text = text;
+            this.index = index;
+        }
+        private int length() {
+            return text.length() - index;
+        }
+        private char charAt(int i) {
+            return text.charAt(index + i);
+        }
+
+        public int compareTo(Suffix that) {
+            if (this == that) return 0;  // optimization
+            int n = Math.min(this.length(), that.length());
+            for (int i = 0; i < n; i++) {
+                if (this.charAt(i) < that.charAt(i)) return -1;
+                if (this.charAt(i) > that.charAt(i)) return +1;
+            }
+            return this.length() - that.length();
+        }
+
+        public String toString() {
+            return text.substring(index);
+        }
+    }
+
+    /**
+     * Returns the length of the input string.
+     * @return the length of the input string
+     */
+    public int length() {
+        return suffixes.length;
+    }
+
+
+    /**
+     * Returns the index into the original string of the <em>i</em>th smallest suffix.
+     * That is, {@code text.substring(sa.index(i))} is the <em>i</em>th smallest suffix.
+     * @param i an integer between 0 and <em>n</em>-1
+     * @return the index into the original string of the <em>i</em>th smallest suffix
+     * @throws java.lang.IllegalArgumentException unless {@code 0 <= i < n}
+     */
+    public int index(int i) {
+        if (i < 0 || i >= suffixes.length) throw new IllegalArgumentException();
+        return suffixes[i].index;
+    }
+
+
+    /**
+     * Returns the length of the longest common prefix of the <em>i</em>th
+     * smallest suffix and the <em>i</em>-1st smallest suffix.
+     * @param i an integer between 1 and <em>n</em>-1
+     * @return the length of the longest common prefix of the <em>i</em>th
+     * smallest suffix and the <em>i</em>-1st smallest suffix.
+     * @throws java.lang.IllegalArgumentException unless {@code 1 <= i < n}
+     */
+    public int lcp(int i) {
+        if (i < 1 || i >= suffixes.length) throw new IllegalArgumentException();
+        return lcpSuffix(suffixes[i], suffixes[i-1]);
+    }
+
+    // longest common prefix of s and t
+    private static int lcpSuffix(Suffix s, Suffix t) {
+        int n = Math.min(s.length(), t.length());
+        for (int i = 0; i < n; i++) {
+            if (s.charAt(i) != t.charAt(i)) return i;
+        }
+        return n;
+    }
+
+    /**
+     * Returns the <em>i</em>th smallest suffix as a string.
+     * @param i the index
+     * @return the <em>i</em> smallest suffix as a string
+     * @throws java.lang.IllegalArgumentException unless {@code 0 <= i < n}
+     */
+    public String select(int i) {
+        if (i < 0 || i >= suffixes.length) throw new IllegalArgumentException();
+        return suffixes[i].toString();
+    }
+
+    /**
+     * Returns the number of suffixes strictly less than the {@code query} string.
+     * We note that {@code rank(select(i))} equals {@code i} for each {@code i}
+     * between 0 and <em>n</em>-1.
+     * @param query the query string
+     * @return the number of suffixes strictly less than {@code query}
+     */
+    public int rank(String query) {
+        int lo = 0, hi = suffixes.length - 1;
+        while (lo <= hi) {
+            int mid = lo + (hi - lo) / 2;
+            int cmp = compare(query, suffixes[mid]);
+            if (cmp < 0) hi = mid - 1;
+            else if (cmp > 0) lo = mid + 1;
+            else return mid;
+        }
+        return lo;
+    }
+
+    // compare query string to suffix
+    private static int compare(String query, Suffix suffix) {
+        int n = Math.min(query.length(), suffix.length());
+        for (int i = 0; i < n; i++) {
+            if (query.charAt(i) < suffix.charAt(i)) return -1;
+            if (query.charAt(i) > suffix.charAt(i)) return +1;
+        }
+        return query.length() - suffix.length();
+    }
+
+    /**
+     * Unit tests the {@code SuffixArray} data type.
+     *
+     * @param args the command-line arguments
+     */
+    public static void main(String[] args) {
+        String s = StdIn.readAll().replaceAll("\\s+", " ").trim();
+        SuffixArray suffix = new SuffixArray(s);
+
+        // StdOut.println("rank(" + args[0] + ") = " + suffix.rank(args[0]));
+
+        StdOut.println("  i ind lcp rnk select");
+        StdOut.println("---------------------------");
+
+        for (int i = 0; i < s.length(); i++) {
+            int index = suffix.index(i);
+            String ith = "\"" + s.substring(index, Math.min(index + 50, s.length())) + "\"";
+            int rank = suffix.rank(s.substring(index));
+            if (i == 0) {
+                StdOut.printf("%3d %3d %3s %3d %s\n", i, index, "-", rank, ith);
+            }
+            else {
+                int lcp = suffix.lcp(i);
+                StdOut.printf("%3d %3d %3d %3d %s\n", i, index, lcp, rank, ith);
+            }
+        }
+    }
+
+}
+
+LongestCommonSubstring.java
+package edu.princeton.cs.algs4;
+
+public class LongestCommonSubstring {
+
+    // Do not instantiate.
+    private LongestCommonSubstring() { }
+
+    // return the longest common prefix of suffix s[p..] and suffix t[q..]
+    private static String lcp(String s, int p, String t, int q) {
+        int n = Math.min(s.length() - p, t.length() - q);
+        for (int i = 0; i < n; i++) {
+            if (s.charAt(p + i) != t.charAt(q + i))
+                return s.substring(p, p + i);
+        }
+        return s.substring(p, p + n);
+    }
+
+    // compare suffix s[p..] and suffix t[q..]
+    private static int compare(String s, int p, String t, int q) {
+        int n = Math.min(s.length() - p, t.length() - q);
+        for (int i = 0; i < n; i++) {
+            if (s.charAt(p + i) != t.charAt(q + i))
+                return s.charAt(p+i) - t.charAt(q+i);
+        }
+        if      (s.length() - p < t.length() - q) return -1;
+        else if (s.length() - p > t.length() - q) return +1;
+        else                                      return  0;
+    }
+
+    /**
+     * Returns the longest common string of the two specified strings.
+     *
+     * @param  s one string
+     * @param  t the other string
+     * @return the longest common string that appears as a substring
+     *         in both {@code s} and {@code t}; the empty string
+     *         if no such string
+     */
+    public static String lcs(String s, String t) {
+        SuffixArray suffix1 = new SuffixArray(s);
+        SuffixArray suffix2 = new SuffixArray(t);
+
+        // find longest common substring by "merging" sorted suffixes 
+        String lcs = "";
+        int i = 0, j = 0;
+        while (i < s.length() && j < t.length()) {
+            int p = suffix1.index(i);
+            int q = suffix2.index(j);
+            String x = lcp(s, p, t, q);
+            if (x.length() > lcs.length()) lcs = x;
+            if (compare(s, p, t, q) < 0) i++;
+            else                         j++;
+        }
+        return lcs;
+    }
+
+    /**
+     * Unit tests the {@code lcs()} method.
+     * Reads in two strings from files specified as command-line arguments;
+     * computes the longest common substring; and prints the results to
+     * standard output.
+     *
+     * @param args the command-line arguments
+     */
+    public static void main(String[] args) {
+        In in1 = new In(args[0]);
+        In in2 = new In(args[1]);
+        String s = in1.readAll().trim().replaceAll("\\s+", " ");
+        String t = in2.readAll().trim().replaceAll("\\s+", " ");
+        StdOut.println("'" + lcs(s, t) + "'");
+    }
+
+}
+
+LongestRepeatedSubstring.java
+package edu.princeton.cs.algs4;
+
+public class LongestRepeatedSubstring {
+
+    // Do not instantiate.
+    private LongestRepeatedSubstring() { }
+
+    /**
+     * Returns the longest common string of the two specified strings.
+     *
+     * @param  s one string
+     * @param  t the other string
+     * @return the longest common string that appears as a substring
+     */
+
+    /**
+     * Returns the longest repeated substring of the specified string.
+     *
+     * @param  text the string
+     * @return the longest repeated substring that appears in {@code text};
+     *         the empty string if no such string
+     */
+    public static String lrs(String text) {
+        int n = text.length();
+        SuffixArray sa = new SuffixArray(text);
+        String lrs = "";
+        for (int i = 1; i < n; i++) {
+            int length = sa.lcp(i);
+            if (length > lrs.length()) {
+                // lrs = sa.select(i).substring(0, length);
+                lrs = text.substring(sa.index(i), sa.index(i) + length);
+            }
+        }
+        return lrs;
+    }
+
+    /**
+     * Unit tests the {@code lrs()} method.
+     *
+     * @param args the command-line arguments
+     */
+    public static void main(String[] args) {
+        String text = StdIn.readAll().trim().replaceAll("\\s+", " ");
+        StdOut.println("'" + lrs(text) + "'");
+    }
+
+}
+
+Huffman.java
+package edu.princeton.cs.algs4;
+
+public class Huffman {
+
+    // alphabet size of extended ASCII
+    private static final int R = 256;
+
+    // Do not instantiate.
+    private Huffman() { }
+
+    // Huffman trie node
+    private static class Node implements Comparable<Node> {
+        private final char ch;
+        private final int freq;
+        private final Node left, right;
+
+        Node(char ch, int freq, Node left, Node right) {
+            this.ch    = ch;
+            this.freq  = freq;
+            this.left  = left;
+            this.right = right;
+        }
+
+        // is the node a leaf node?
+        private boolean isLeaf() {
+            return (left == null) && (right == null);
+        }
+
+        // compare, based on frequency
+        public int compareTo(Node that) {
+            return this.freq - that.freq;
+        }
+    }
+
+    /**
+     * Reads a sequence of 8-bit bytes from standard input; compresses them
+     * using Huffman codes with an 8-bit alphabet; and writes the results
+     * to standard output.
+     */
+    public static void compress() {
+        // read the input
+        String s = BinaryStdIn.readString();
+        char[] input = s.toCharArray();
+
+        // tabulate frequency counts
+        int[] freq = new int[R];
+        for (int i = 0; i < input.length; i++)
+            freq[input[i]]++;
+
+        // build Huffman trie
+        Node root = buildTrie(freq);
+
+        // build code table
+        String[] st = new String[R];
+        buildCode(st, root, "");
+
+        // print trie for decoder
+        writeTrie(root);
+
+        // print number of bytes in original uncompressed message
+        BinaryStdOut.write(input.length);
+
+        // use Huffman code to encode input
+        for (int i = 0; i < input.length; i++) {
+            String code = st[input[i]];
+            for (int j = 0; j < code.length(); j++) {
+                if (code.charAt(j) == '0') {
+                    BinaryStdOut.write(false);
+                }
+                else if (code.charAt(j) == '1') {
+                    BinaryStdOut.write(true);
+                }
+                else throw new IllegalStateException("Illegal state");
+            }
+        }
+
+        // close output stream
+        BinaryStdOut.close();
+    }
+
+    // build the Huffman trie given frequencies
+    private static Node buildTrie(int[] freq) {
+
+        // initialze priority queue with singleton trees
+        MinPQ<Node> pq = new MinPQ<Node>();
+        for (char c = 0; c < R; c++)
+            if (freq[c] > 0)
+                pq.insert(new Node(c, freq[c], null, null));
+
+        // merge two smallest trees
+        while (pq.size() > 1) {
+            Node left  = pq.delMin();
+            Node right = pq.delMin();
+            Node parent = new Node('\0', left.freq + right.freq, left, right);
+            pq.insert(parent);
+        }
+        return pq.delMin();
+    }
+
+
+    // write bitstring-encoded trie to standard output
+    private static void writeTrie(Node x) {
+        if (x.isLeaf()) {
+            BinaryStdOut.write(true);
+            BinaryStdOut.write(x.ch, 8);
+            return;
+        }
+        BinaryStdOut.write(false);
+        writeTrie(x.left);
+        writeTrie(x.right);
+    }
+
+    // make a lookup table from symbols and their encodings
+    private static void buildCode(String[] st, Node x, String s) {
+        if (!x.isLeaf()) {
+            buildCode(st, x.left,  s + '0');
+            buildCode(st, x.right, s + '1');
+        }
+        else {
+            st[x.ch] = s;
+        }
+    }
+
+    /**
+     * Reads a sequence of bits that represents a Huffman-compressed message from
+     * standard input; expands them; and writes the results to standard output.
+     */
+    public static void expand() {
+
+        // read in Huffman trie from input stream
+        Node root = readTrie(); 
+
+        // number of bytes to write
+        int length = BinaryStdIn.readInt();
+
+        // decode using the Huffman trie
+        for (int i = 0; i < length; i++) {
+            Node x = root;
+            while (!x.isLeaf()) {
+                boolean bit = BinaryStdIn.readBoolean();
+                if (bit) x = x.right;
+                else     x = x.left;
+            }
+            BinaryStdOut.write(x.ch, 8);
+        }
+        BinaryStdOut.close();
+    }
+
+
+    private static Node readTrie() {
+        boolean isLeaf = BinaryStdIn.readBoolean();
+        if (isLeaf) {
+            return new Node(BinaryStdIn.readChar(), -1, null, null);
+        }
+        else {
+            Node left = readTrie();
+            Node right = readTrie();
+            return new Node('\0', -1, left, right);
+        }
+    }
+
+    /**
+     * Sample client that calls {@code compress()} if the command-line
+     * argument is "-" an {@code expand()} if it is "+".
+     *
+     * @param args the command-line arguments
+     */
+    public static void main(String[] args) {
+        if      (args[0].equals("-")) compress();
+        else if (args[0].equals("+")) expand();
+        else throw new IllegalArgumentException("Illegal command line argument");
+    }
+
+}
