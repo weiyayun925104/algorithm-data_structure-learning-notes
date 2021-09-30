@@ -1,0 +1,7708 @@
+// Source : https://leetcode.com/problems/combination-sum-iii/description/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+
+class Solution {
+public:
+    vector<vector<int>> combinationSum3(int k, int n) {
+
+        vector<vector<int>> res;
+        vector<int> cur_res;
+        solve(1, k, n, cur_res, res);
+        return res;
+    }
+
+private:
+    void solve(int index, int k, int n,
+               vector<int>& cur_res, vector<vector<int>>& res){
+
+        if(n == 0 && k == 0){
+            res.push_back(cur_res);
+            return;
+        }
+
+        if(k == 0)
+            return;
+
+        for(int i = index ; i <= 9 ; i ++)
+            if(n >= i){
+                cur_res.push_back(i);
+                solve(i + 1, k - 1, n - i, cur_res, res);
+                cur_res.pop_back();
+            }
+
+        return;
+    }
+};
+
+void print_vec(const vector<int>& vec){
+    for(int e: vec)
+        cout << e << " ";
+    cout << endl;
+}
+
+int main() {
+
+    vector<vector<int>> res1 = Solution().combinationSum3(3, 7);
+    for(const vector<int>& a_res: res1)
+        print_vec(a_res);
+
+    cout << endl;
+
+    vector<vector<int>> res2 = Solution().combinationSum3(3, 9);
+    for(const vector<int>& a_res: res2)
+        print_vec(a_res);
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/contains-duplicate/
+
+#include <iostream>
+#include <unordered_set>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    bool containsDuplicate(vector<int>& nums) {
+
+        unordered_set<int> record;
+        for( int i = 0 ; i < nums.size() ; i ++ )
+            if( record.find( nums[i] ) == record.end() )
+                record.insert( nums[i] );
+            else
+                return true;
+
+        return false;
+    }
+};
+
+
+void print_bool(bool res){
+    cout << (res ? "True" : "False") << endl;
+}
+
+int main() {
+
+    vector<int> vec = {0, 0, 1};
+    print_bool(Solution().containsDuplicate(vec));
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/the-skyline-problem/description/
+
+#include <iostream>
+#include <vector>
+#include <set>
+#include <multiset>
+#include <cassert>
+
+using namespace std;
+
+class Solution {
+ public:
+  vector<vector<int>> getSkyline(vector<vector<int>>& buildings) {
+    vector<vector<int>> res;
+    multiset<pair<int, int>> s;
+    for (auto& x : buildings) {
+      s.emplace(x[0], -x[2]);
+      s.emplace(x[1], x[2]);
+    }
+    multiset<int> m{0};
+    int pre = 0;
+    int mx = 0;
+    for (auto& [x, y] : s) {
+      if (y < 0) {
+        m.emplace(-y);
+      } else {
+        m.erase(m.find(y));
+      }
+      mx = *rbegin(m);
+      if (mx != pre) {
+        res.emplace_back(vector<int>{x, mx});
+        pre = mx;
+      }
+    }
+    return res;
+  }
+};
+
+int main() {
+
+    int n = 5;
+    int buildings[5][3] = {
+            {2, 9, 10},
+            {3, 7, 15},
+            {5, 12, 12},
+            {15, 20, 10},
+            {19, 24, 8}
+    };
+    vector<vector<int>> vec;
+    for(int i = 0 ; i < n ; i ++)
+        vec.push_back(vector<int>(buildings[i], buildings[i] + 3));
+
+    vector<pair<int, int>> res = Solution().getSkyline(vec);
+    for(pair<int, int> p: res)
+        cout << p.first << " " << p.second << endl;
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/contains-duplicate-ii/description/
+
+#include <iostream>
+#include <vector>
+#include <unordered_map>
+
+using namespace std;
+
+class Solution {
+public:
+    bool containsNearbyDuplicate(vector<int>& nums, int k) {
+
+        if(nums.size() <= 1)
+            return false;
+
+        if(k <= 0)
+            return false;
+
+        unordered_map<int, int> record;
+        record[nums[0]] = 0;
+        for(int i = 1 ; i < nums.size() ; i ++){
+
+            if(record.count(nums[i]) && i - record[nums[i]] <= k)
+                return true;
+
+            record[nums[i]] = i;
+        }
+
+        return false;
+    }
+};
+
+
+void print_bool(bool b){
+    cout << (b ? "True" : "False") << endl;
+}
+
+int main() {
+
+    vector<int> nums = {1, 2, 1};
+    int k = 1;
+
+    print_bool(Solution().containsNearbyDuplicate(nums, k));
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/contains-duplicate-iii/description/
+
+#include <iostream>
+#include <vector>
+#include <set>
+#include <cassert>
+#include <stdexcept>
+#include <cmath>
+
+using namespace std;
+
+class Solution {
+public:
+    bool containsNearbyAlmostDuplicate(vector<int>& nums, int k, int t) {
+
+        if(t < 0)
+            return false;
+
+        set<long long> record;
+        for(int i = 0 ; i < nums.size() ; i ++){
+
+            if(record.lower_bound((long long)nums[i] - (long long)t) != record.end() &&
+                *record.lower_bound((long long)nums[i] - (long long)t ) <= (long long)nums[i] + (long long)t)
+                return true;
+
+            record.insert(nums[i]);
+
+            if(record.size() == k + 1)
+                record.erase( nums[i-k] );
+        }
+
+        return false;
+    }
+};
+
+
+void printBool(bool b){
+    cout << (b ? "True" : "False") << endl;
+}
+
+int main() {
+
+    int nums[] = {-2147483648, -2147483647};
+    vector<int> vec(nums, nums + sizeof(nums)/sizeof(int));
+    int k = 3;
+    int t = 3;
+
+    printBool(Solution().containsNearbyAlmostDuplicate(vec, k, t));
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/maximal-square/
+
+#include <iostream>
+#include <vector>
+
+using namespace  std;
+
+class Solution {
+ public:
+  int maximalSquare(vector<vector<char>>& matrix) {
+    if (empty(matrix) || empty(matrix[0])) {
+      return 0;
+    }
+    int res = 0;
+    int m = size(matrix);
+    int n = size(matrix[0]);
+    vector<vector<int>> dp(m, vector<int>(n));
+    for (int i = 0; i < m; ++i) {
+      if (matrix[i][0] == '1') {
+        dp[i][0] = 1;
+        res = max(res, dp[i][0]);
+      }
+    }
+    for (int i = 0; i < n; ++i) {
+      if (matrix[0][i] == '1') {
+        dp[0][i] = 1;
+        res = max(res, dp[0][i]);
+      }
+    }
+    for (int i = 1; i < m; ++i) {
+      for (int j = 1; j < n; ++j) {
+        if (matrix[i][j] == '1') {
+          dp[i][j] = min({dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]}) + 1;
+          res = max(res, dp[i][j]);
+        }
+      }
+    }
+    return res * res;
+  }
+};
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/count-complete-tree-nodes/
+
+#include <iostream>
+#include <cassert>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode *left;
+    TreeNode *right;
+    TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+};
+
+class Solution {
+
+public:
+    int countNodes(TreeNode* root) {
+
+        if(root == NULL)
+            return 0;
+
+        int left = leftHeight(root);
+        int right = rightHeight(root);
+        if(left == right)
+            return (1 << left) - 1;
+
+        return 1 + countNodes(root->left) + countNodes(root->right);
+    }
+
+private:
+    int leftHeight(TreeNode* root){
+        if(root == NULL)
+            return 0;
+        return 1 + leftHeight(root->left);
+    }
+
+    int rightHeight(TreeNode* root){
+        if(root == NULL)
+            return 0;
+        return 1 + rightHeight(root->right);
+    }
+};
+
+
+int main() {
+
+    TreeNode* root = new TreeNode(1);
+
+    TreeNode* left = new TreeNode(2);
+    root->left = left;
+
+    TreeNode* right = new TreeNode(3);
+    root->right = right;
+
+    TreeNode* leftleft = new TreeNode(4);
+    root->left->left = leftleft;
+
+    TreeNode* leftright = new TreeNode(5);
+    root->left->right = leftright;
+
+    TreeNode* rightleft = new TreeNode(6);
+    root->right->left = rightleft;
+
+    cout << Solution().countNodes(root) << endl;
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/basic-calculator/
+#include <iostream>
+#include <sstream>
+#include <vector>
+#include <cassert>
+
+using namespace std;
+
+inline void error(const string &errormessage)
+{
+    throw runtime_error(errormessage);
+}
+
+const char quit = 'q';
+const char number = '8';
+
+class Token
+{
+public:
+    char kind;
+    double value;
+    Token(char ch) : kind(ch), value(0) { }
+    Token(char ch, double val) : kind(ch), value(val) { }
+};
+
+class Token_stream
+{
+public:
+    Token_stream(istream &is);
+    Token get();
+    void putback(Token t);
+    istream & get_istream();
+private:
+    bool full;
+    Token buffer;
+    istream *is_ptr;
+};
+
+Token_stream::Token_stream(istream &is) : full(false), buffer(0), is_ptr(&is) { }
+istream &  Token_stream::get_istream()
+{
+    return (*is_ptr);
+}
+
+void Token_stream::putback(Token t)
+{
+    if (full)
+    {
+        error("putback() into a full buffer");
+    }
+    buffer = t;
+    full = true;
+}
+
+Token Token_stream::get()
+{
+    if (full)
+    {
+        full = false;
+        return buffer;
+    }
+
+    char ch;
+    (*is_ptr).get(ch);
+
+    if ( (*is_ptr).eof() ) { return Token(quit); }
+
+    while (isspace(ch))
+    {
+        (*is_ptr).get(ch);
+        if ( (*is_ptr).eof() ) { return Token(quit); }
+    }
+
+    switch (ch)
+    {
+    case '{':
+    case '}':
+    case '(':
+    case ')':
+    case '+':
+    case '-':
+    case '*':
+    case '/':
+    case '%':
+        return Token(ch);
+    case '.':
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+    {
+        (*is_ptr).putback(ch);
+        double val;
+        (*is_ptr) >> val;
+        return Token(number, val);
+    }
+    default:
+        error("Bad token");
+    }
+    return Token(quit);
+}
+
+double expression(Token_stream &ts);
+
+double primary(Token_stream &ts)
+{
+    Token t = ts.get();
+    double d = 0;
+    switch (t.kind)
+    {
+    case '(':
+        d = expression(ts);
+        t = ts.get();
+        if (t.kind != ')')
+        {
+            error("')' expected");
+        }
+        break;
+    case '{':
+        d = expression(ts);
+        t = ts.get();
+        if (t.kind != '}')
+        {
+            error("'}' expected");
+        }
+        break;
+    case number:
+        d = t.value;
+        break;
+    case '-':
+        d = -primary(ts);
+        break;
+    case '+':
+        d = primary(ts);
+        break;
+    default:
+        error("primary expected");
+    }
+
+    return d;
+}
+
+double term(Token_stream &ts)
+{
+    double left = primary(ts);
+    Token t = ts.get();
+
+    while (true)
+    {
+        switch (t.kind)
+        {
+        case '*':
+            left *= primary(ts);
+            t = ts.get();
+            break;
+        case '/':
+        {
+            double d = primary(ts);
+            if (d == 0)
+            {
+                error("divide by zero");
+            }
+            left /= d;
+            t = ts.get();
+            break;
+        }
+        case '%':
+        {
+            double d = primary(ts);
+            int i1 = int(left);
+            if (i1 != left)
+            {
+                error("left-hand operand of % not int");
+            }
+            int i2 = int(d);
+            if (i2 != d)
+            {
+                error("right-hand operand of % not int");
+            }
+            if (i2 == 0)
+            {
+                error("%: divide by zero");
+            }
+            left = i1 % i2;
+            t = ts.get();
+            break;
+        }
+        default:
+            ts.putback(t);
+            return left;
+        }
+    }
+}
+
+double expression(Token_stream &ts)
+{
+    double left = term(ts);
+    Token t = ts.get();
+
+    while (true)
+    {
+        switch (t.kind)
+        {
+        case '+':
+            left += term(ts);
+            t = ts.get();
+            break;
+        case '-':
+            left -= term(ts);
+            t = ts.get();
+            break;
+        default:
+            ts.putback(t);
+            return left;
+        }
+    }
+}
+
+double statement(Token_stream &ts)
+{
+    return expression(ts);
+}
+
+double calculate(Token_stream &ts)
+{
+    if (ts.get_istream())
+    {
+        return statement(ts);
+    }
+    return 0;
+}
+
+double calculateStr(const string &s)
+{
+    istringstream iss(s);
+    Token_stream ts(iss);
+    return calculate(ts);
+}
+
+class Solution {
+public:
+    int calculate(string s) {
+        return (int) calculateStr(s);
+    }
+
+};
+
+
+int main() {
+
+    cout << Solution().calculate("1 + 1") << endl; // 2
+    cout << Solution().calculate(" 2-1 + 2 ") << endl; // 3
+    cout << Solution().calculate("(1+(4+5+2)-3)+(6+8)") << endl; // 23
+    cout << Solution().calculate("-2+ 1") << endl; // -1
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/implement-stack-using-queues/description/
+
+#include <iostream>
+#include <queue>
+#include <cassert>
+
+using namespace std;
+
+class MyStack {
+
+private:
+    queue<int> q;
+    int sz = 0;
+
+public:
+    /** Initialize your data structure here. */
+    MyStack(): sz(0) {}
+
+    /** Push element x onto stack. */
+    void push(int x) {
+        q.push(x);
+        for(int i = 0; i < sz; i ++){
+            int e = q.front();
+            q.pop();
+            q.push(e);
+        }
+        sz ++;
+    }
+
+    /** Removes the element on top of the stack and returns that element. */
+    int pop() {
+
+        assert(!empty());
+        int ret = q.front();
+        q.pop();
+        sz --;
+        return ret;
+    }
+
+    /** Get the top element. */
+    int top() {
+        assert(!empty());
+        return q.front();
+    }
+
+    /** Returns whether the stack is empty. */
+    bool empty() {
+        return q.empty();
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/invert-binary-tree/description/
+
+#include <iostream>
+#include <queue>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode *left;
+    TreeNode *right;
+    TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+};
+
+class Solution {
+public:
+    TreeNode* invertTree(TreeNode* root) {
+
+        if(root == NULL)
+            return NULL;
+
+        queue<TreeNode*> q;
+        q.push(root);
+        while(!q.empty()){
+            TreeNode* curNode = q.front();
+            q.pop();
+            swap(curNode->left, curNode->right);
+
+            if(curNode->left)
+                q.push(curNode->left);
+            if(curNode->right)
+                q.push(curNode->right);
+        }
+
+        return root;
+    }
+};
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/basic-calculator-ii/
+#include <iostream>
+#include <sstream>
+#include <vector>
+#include <cassert>
+
+using namespace std;
+
+inline void error(const string &errormessage)
+{
+    throw runtime_error(errormessage);
+}
+
+const char quit = 'q';
+const char number = '8';
+
+class Token
+{
+public:
+    char kind;
+    double value;
+    Token(char ch) : kind(ch), value(0) { }
+    Token(char ch, double val) : kind(ch), value(val) { }
+};
+
+class Token_stream
+{
+public:
+    Token_stream(istream &is);
+    Token get();
+    void putback(Token t);
+    istream & get_istream();
+private:
+    bool full;
+    Token buffer;
+    istream *is_ptr;
+};
+
+Token_stream::Token_stream(istream &is) : full(false), buffer(0), is_ptr(&is) { }
+istream &  Token_stream::get_istream()
+{
+    return (*is_ptr);
+}
+
+void Token_stream::putback(Token t)
+{
+    if (full)
+    {
+        error("putback() into a full buffer");
+    }
+    buffer = t;
+    full = true;
+}
+
+Token Token_stream::get()
+{
+    if (full)
+    {
+        full = false;
+        return buffer;
+    }
+
+    char ch;
+    (*is_ptr).get(ch);
+
+    if ( (*is_ptr).eof() ) { return Token(quit); }
+
+    while (isspace(ch))
+    {
+        (*is_ptr).get(ch);
+        if ( (*is_ptr).eof() ) { return Token(quit); }
+    }
+
+    switch (ch)
+    {
+    case '{':
+    case '}':
+    case '(':
+    case ')':
+    case '+':
+    case '-':
+    case '*':
+    case '/':
+    case '%':
+        return Token(ch);
+    case '.':
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+    {
+        (*is_ptr).putback(ch);
+        double val;
+        (*is_ptr) >> val;
+        return Token(number, val);
+    }
+    default:
+        error("Bad token");
+    }
+    return Token(quit);
+}
+
+double expression(Token_stream &ts);
+
+double primary(Token_stream &ts)
+{
+    Token t = ts.get();
+    double d = 0;
+    switch (t.kind)
+    {
+    case '(':
+        d = expression(ts);
+        t = ts.get();
+        if (t.kind != ')')
+        {
+            error("')' expected");
+        }
+        break;
+    case '{':
+        d = expression(ts);
+        t = ts.get();
+        if (t.kind != '}')
+        {
+            error("'}' expected");
+        }
+        break;
+    case number:
+        d = t.value;
+        break;
+    case '-':
+        d = -primary(ts);
+        break;
+    case '+':
+        d = primary(ts);
+        break;
+    default:
+        error("primary expected");
+    }
+
+    return d;
+}
+
+double term(Token_stream &ts)
+{
+    double left = primary(ts);
+    Token t = ts.get();
+
+    while (true)
+    {
+        switch (t.kind)
+        {
+        case '*':
+            left *= primary(ts);
+            t = ts.get();
+            break;
+        case '/':
+        {
+            double d = primary(ts);
+            if (d == 0)
+            {
+                error("divide by zero");
+            }
+            left /= d;
+            left = (int) left; // The integer division should truncate toward zero
+            t = ts.get();
+            break;
+        }
+        case '%':
+        {
+            double d = primary(ts);
+            int i1 = int(left);
+            if (i1 != left)
+            {
+                error("left-hand operand of % not int");
+            }
+            int i2 = int(d);
+            if (i2 != d)
+            {
+                error("right-hand operand of % not int");
+            }
+            if (i2 == 0)
+            {
+                error("%: divide by zero");
+            }
+            left = i1 % i2;
+            t = ts.get();
+            break;
+        }
+        default:
+            ts.putback(t);
+            return left;
+        }
+    }
+}
+
+double expression(Token_stream &ts)
+{
+    double left = term(ts);
+    Token t = ts.get();
+
+    while (true)
+    {
+        switch (t.kind)
+        {
+        case '+':
+            left += term(ts);
+            t = ts.get();
+            break;
+        case '-':
+            left -= term(ts);
+            t = ts.get();
+            break;
+        default:
+            ts.putback(t);
+            return left;
+        }
+    }
+}
+
+double statement(Token_stream &ts)
+{
+    return expression(ts);
+}
+
+double calculate(Token_stream &ts)
+{
+    if (ts.get_istream())
+    {
+        return statement(ts);
+    }
+    return 0;
+}
+
+double calculateStr(const string &s)
+{
+    istringstream iss(s);
+    Token_stream ts(iss);
+    return calculate(ts);
+}
+
+class Solution {
+public:
+    int calculate(string s) {
+        return (int) calculateStr(s);
+    }
+
+};
+
+// Source : https://leetcode.com/problems/summary-ranges/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    vector<string> summaryRanges(vector<int>& nums) {
+
+        vector<string> res;
+        for(int start = 0, i = 1; i <= nums.size(); i ++)
+            if(i == nums.size() || nums[i] != nums[i - 1] + 1){
+                if(i - start == 1) res.push_back(to_string(nums[start]));
+                else res.push_back(to_string(nums[start]) + "->" + to_string(nums[i - 1]));
+
+                start = i;
+                i = start;
+            }
+        return res;
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/majority-element-ii/description/
+
+#include <iostream>
+#include <vector>
+#include <unordered_map>
+#include <cassert>
+
+using namespace std;
+
+class Solution {
+
+public:
+    vector<int> majorityElement(vector<int>& nums) {
+
+        assert(nums.size() > 0);
+
+        unordered_map<int, int> records;
+        for(int num: nums)
+            records[num] ++;
+
+        vector<int> res;
+        for(const pair<int, int> &record: records)
+            if(record.second > nums.size()/3)
+                res.push_back(record.first);
+
+        return res;
+    }
+};
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/kth-smallest-element-in-a-bst/description/
+
+#include <iostream>
+
+using namespace std;
+
+/// Definition for a binary tree node.
+struct TreeNode {
+    int val;
+    TreeNode *left;
+    TreeNode *right;
+    TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+};
+
+class Solution {
+
+private:
+    int index;
+
+public:
+    int kthSmallest(TreeNode* root, int k) {
+        index = 0;
+        return kthSmallestNode(root, k)->val;
+    }
+
+private:
+    TreeNode* kthSmallestNode(TreeNode* node, int k){
+
+        if(node == NULL)
+            return NULL;
+
+        TreeNode* res = kthSmallestNode(node->left, k);
+        if(res) return res;
+
+        index ++;
+        if(index == k)
+            return node;
+
+        return kthSmallestNode(node->right, k);
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/power-of-two/
+
+#include <iostream>
+
+using namespace std;
+
+class Solution {
+public:
+    bool isPowerOfTwo(int n) {
+
+        if(n <= 0) return false;
+        while(n % 2 == 0) n /= 2;
+        return n == 1;
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/implement-queue-using-stacks/description/
+
+#include <iostream>
+#include <stack>
+
+using namespace std;
+
+class MyQueue {
+
+private:
+    stack<int> s;
+
+public:
+    /** Initialize your data structure here. */
+    MyQueue() {}
+
+    /** Push element x to the back of queue. */
+    void push(int x) {
+        stack<int> s2;
+        while(!s.empty()){
+            s2.push(s.top());
+            s.pop();
+        }
+        s.push(x);
+        while(!s2.empty()){
+            s.push(s2.top());
+            s2.pop();
+        }
+    }
+
+    /** Removes the element from in front of queue and returns that element. */
+    int pop() {
+
+        int ret = s.top();
+        s.pop();
+
+        return ret;
+    }
+
+    /** Get the front element. */
+    int peek() {
+        return s.top();
+    }
+
+    /** Returns whether the queue is empty. */
+    bool empty() {
+        return s.empty();
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/number-of-digit-one/
+
+#include <iostream>
+#include <vector>
+#include <cmath>
+
+using namespace std;
+
+//假设一个数为abcdef
+//现在要找百位1的个数，
+//若d=0
+//则百位1的个数为 abc*100
+//若d=1
+//则百位1的个数为abc*100+ef+1
+//若d>1
+//则百位为1的个数为(abc+1)*100.
+
+class Solution {
+public:
+    int countDigitOne(int n) {
+         
+        if(n<=0) return 0;
+         
+        int res=0;
+        for(long m=1;m<=n;m*=10)
+        {
+            long a=n/m,b=n%m;
+            res+=(a+8)/10*m+(a%10==1)*(b+1);
+        }
+        return res;
+    }
+};
+
+int main() {
+
+    cout << Solution().countDigitOne(13) << endl;
+    // 6
+
+    cout << Solution().countDigitOne(100) << endl;
+    // 21
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/palindrome-linked-list/description/
+
+#include <iostream>
+
+using namespace std;
+
+struct ListNode {
+    int val;
+    ListNode *next;
+    ListNode(int x) : val(x), next(NULL) {}
+};
+
+class Solution {
+public:
+    bool isPalindrome(ListNode* head) {
+
+        if(head == NULL || head->next == NULL)
+            return true;
+
+        ListNode* slow = head;
+        ListNode* fast = head;
+        while(fast->next != NULL && fast->next->next != NULL){
+            slow = slow->next;
+            fast = fast->next->next;
+        }
+
+        slow->next = reverse(slow->next);
+
+        slow = slow->next;
+        ListNode* cur = head;
+        while(slow != NULL){
+            if(cur->val != slow->val)
+                return false;
+            else{
+                slow = slow->next;
+                cur = cur->next;
+            }
+        }
+        return true;
+    }
+
+private:
+    ListNode* reverse(ListNode* head){
+
+        if(head == NULL || head->next == NULL)
+            return head;
+
+        ListNode* pre = head;
+        ListNode* cur = head->next;
+        ListNode* next = cur->next;
+        head->next = NULL;
+
+        while(true){
+            cur->next = pre;
+            pre = cur;
+            cur = next;
+            if(cur == NULL)
+                break;
+            next = cur->next;
+        }
+
+        return pre;
+    }
+};
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-search-tree/description/
+
+#include <iostream>
+#include <cassert>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode *left;
+    TreeNode *right;
+    TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+};
+
+class Solution {
+public:
+    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+
+        if(!root) return root;
+
+        TreeNode* cur = root;
+        while(cur) {
+            if (p->val < cur->val && q->val < cur->val)
+                cur = cur->left;
+            else if (p->val > cur->val && q->val > cur->val)
+                cur = cur->right;
+            else
+                return cur;
+        }
+
+        return NULL;
+    }
+};
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-tree/description/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode *left;
+    TreeNode *right;
+    TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+};
+
+class Solution {
+public:
+    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+
+        vector<TreeNode*> path1;
+        dfs(root, p, path1);
+
+        vector<TreeNode*> path2;
+        dfs(root, q, path2);
+
+        TreeNode* res;
+        for(int i = 0; i < path1.size() && i < path2.size(); i ++)
+            if(path1[i] == path2[i]) res = path1[i];
+            else break;
+        return res;
+    }
+
+private:
+    bool dfs(TreeNode* node, TreeNode* target, vector<TreeNode*>& path){
+
+        if(!node) return false;
+
+        path.push_back(node);
+        if(node == target) return true;
+
+        if(dfs(node->left, target, path)) return true;
+        if(dfs(node->right, target, path)) return true;
+
+        path.pop_back();
+        return false;
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/delete-node-in-a-linked-list/description/
+
+#include <iostream>
+#include <cassert>
+
+using namespace std;
+
+struct ListNode {
+    int val;
+    ListNode *next;
+    ListNode(int x) : val(x), next(NULL) {}
+};
+
+
+ListNode* createLinkedList(int arr[], int n){
+
+    if(n == 0)
+        return NULL;
+
+    ListNode* head = new ListNode(arr[0]);
+    ListNode* curNode = head;
+    for(int i = 1 ; i < n ; i ++){
+        curNode->next = new ListNode(arr[i]);
+        curNode = curNode->next;
+    }
+
+    return head;
+}
+
+void printLinkedList(ListNode* head){
+
+    ListNode* curNode = head;
+    while(curNode != NULL){
+        cout << curNode->val << " -> ";
+        curNode = curNode->next;
+    }
+
+    cout << "NULL" << endl;
+
+    return;
+}
+
+void deleteLinkedList(ListNode* head){
+
+    ListNode* curNode = head;
+    while(curNode != NULL){
+        ListNode* delNode = curNode;
+        curNode = curNode->next;
+        delete delNode;
+    }
+
+    return;
+}
+
+ListNode* findNode(ListNode* head, int x){
+
+    ListNode* curNode = head;
+    while(curNode != NULL){
+        if(curNode->val == x)
+            return curNode;
+        curNode = curNode->next;
+    }
+    return NULL;
+}
+
+class Solution {
+public:
+    void deleteNode(ListNode* node) {
+
+        assert(node != NULL && node->next != NULL);
+
+        node->val = node->next->val;
+        ListNode* delNode = node->next;
+        node->next = delNode->next;
+
+        delete delNode;
+
+        return;
+    }
+};
+
+int main() {
+
+    int arr[] = {1, 2, 3, 4};
+    int n = sizeof(arr)/sizeof(int);
+
+    ListNode* head = createLinkedList(arr, n);
+    printLinkedList(head);
+
+    ListNode* node2 = findNode(head, 2);
+    Solution().deleteNode(node2);
+    printLinkedList(head);
+
+    deleteLinkedList(head);
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/delete-node-in-a-linked-list/description/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  vector<int> productExceptSelf(vector<int>& nums) {
+    int n = size(nums);
+    vector<int> l(n, 1);
+    vector<int> r(n, 1);
+    for (int i = 1; i < n; ++i) {
+      l[i] = l[i - 1] * nums[i - 1];
+    }
+    for (int i = n - 2; i >= 0; --i) {
+      r[i] = r[i + 1] * nums[i + 1];
+    }
+    for (int i = 0; i < n; ++i) {
+      l[i] *= r[i];
+    }
+    return l;
+  }
+};
+
+int main() {
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/sliding-window-maximum/description/
+
+#include <iostream>
+#include <vector>
+#include <cassert>
+
+using namespace std;
+
+class Solution {
+public:
+    vector<int> maxSlidingWindow(vector<int>& nums, int k) {
+
+        int n = nums.size();
+
+        if(k == 0 || n == 0)
+            return vector<int>();
+
+        if(k == 1)
+            return nums;
+
+        vector<int> right(n);
+        int cur = nums[0];
+        for(int i = 0; i < n; i ++){
+            if(i % k == 0) cur = nums[i];
+            else cur = max(cur, nums[i]);
+            right[i] = cur;
+        }
+
+        vector<int> left(n);
+        cur = nums[n - 1];
+        for(int i = n - 1; i >= 0; i --){
+            if(i % k == k - 1) cur = nums[i];
+            else cur = max(cur, nums[i]);
+            left[i] = cur;
+        }
+
+        vector<int> res(n - k + 1);
+        for(int i = 0; i <= n - k; i ++)
+            res[i] = max(left[i], right[min(i + k - 1, n - 1)]);
+
+        return res;
+    }
+};
+
+
+void print_vec(const vector<int>& vec){
+    for(int e: vec) cout << e << " "; cout << endl;
+}
+
+int main() {
+
+    vector<int> nums = {1, 3, -1, -3, 5, 3, 6, 7};
+    print_vec(Solution().maxSlidingWindow(nums, 3));
+    // 3 3 5 5 6 7
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/search-a-2d-matrix-ii/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  bool searchMatrix(vector<vector<int>>& matrix, int target) {
+    if (empty(matrix) || empty(matrix[0])) {
+      return false;
+    }
+    int m = size(matrix);
+    int n = size(matrix[0]);
+    int i = m - 1;
+    int j = 0;
+    while (i >= 0 && j <= n - 1) {
+      if (matrix[i][j] == target) {
+        return true;
+      } else if (matrix[i][j] < target) {
+        ++j;
+      } else {
+        --i;
+      }
+    }
+    return false;
+  }
+};
+
+int main() {
+
+    vector<vector<int>> matrix1 ={
+            {1,4,7,11,15},
+            {2,5,8,12,19},
+            {3,6,9,16,22},
+            {10,13,14,17,24},
+            {18,21,23,26,30}
+    };
+    cout << Solution().searchMatrix(matrix1, 20) << endl;
+    // 0
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/different-ways-to-add-parentheses/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    unordered_map<string, vector<int>> memo;
+    vector<int> diffWaysToCompute(string input) {
+        if (memo.count(input)) return memo[input];
+        vector<int> res;
+        for (int i = 0; i < input.size(); ++i) {
+            if (input[i] == '+' || input[i] == '-' || input[i] == '*') {
+                vector<int> left = diffWaysToCompute(input.substr(0, i));
+                vector<int> right = diffWaysToCompute(input.substr(i + 1));
+                for (int j = 0; j < left.size(); ++j) {
+                    for (int k = 0; k < right.size(); ++k) {
+                        if (input[i] == '+') res.push_back(left[j] + right[k]);
+                        else if (input[i] == '-') res.push_back(left[j] - right[k]);
+                        else res.push_back(left[j] * right[k]);
+                    }
+                }
+            }
+        }
+        if (res.empty()) res.push_back(stoi(input));
+        memo[input] = res;
+        return res;
+    }
+};
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/valid-anagram/
+
+#include <iostream>
+
+using namespace std;
+
+class Solution {
+public:
+    bool isAnagram(string s, string t) {
+
+        if( s.size() != t.size() )
+            return false;
+
+        int freq[26] = {0};
+        for( int i = 0 ; i < s.size() ; i ++ )
+            freq[s[i]-'a'] ++;
+
+        for( int i = 0 ; i < t.size() ; i ++ ){
+            freq[t[i]-'a'] --;
+            if( freq[t[i]-'a'] < 0 )
+                return false;
+        }
+
+        return true;
+    }
+};
+
+
+int main() {
+
+    cout << Solution().isAnagram("anagram", "nagaram") << endl;
+    cout << Solution().isAnagram("rat", "car") << endl;
+    cout << Solution().isAnagram("ab", "a") << endl;
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/shortest-word-distance/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    int shortestDistance(vector<string>& words, string word1, string word2) {
+
+        int last_index = -1, last_tag = 0, res = INT_MAX;
+        for(int i = 0; i < words.size(); i ++){
+            int cur_tag = 0;
+            if(words[i] == word1) cur_tag = 1;
+            else if(words[i] == word2) cur_tag = 2;
+
+            if(last_tag && cur_tag && cur_tag != last_tag)
+                res = min(res, i - last_index);
+
+            if(cur_tag)
+                last_index = i, last_tag = cur_tag;
+        }
+
+        return res;
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/shortest-word-distance-ii/
+
+#include <iostream>
+#include <vector>
+#include <unordered_map>
+
+using namespace std;
+
+class WordDistance {
+
+private:
+    unordered_map<string, vector<int>> pos;
+
+public:
+    WordDistance(vector<string> words) {
+        for (int i = 0; i < words.size(); i++)
+            pos[words[i]].push_back(i);
+    }
+
+    int shortest(string word1, string word2) {
+
+        vector<int>& vec1 = pos[word1];
+        vector<int>& vec2 = pos[word2];
+
+        int i1 = 0, i2 = 0;
+        int res = abs(vec1[i1] - vec2[i2]);
+        while(i1 < vec1.size() && i2 < vec2.size()){
+            res = min(res, abs(vec1[i1] - vec2[i2]));
+            if(vec1[i1] < vec2[i2]) i1 ++;
+            else i2 ++;
+        }
+
+        return res;
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/shortest-word-distance-iii/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    int shortestWordDistance(vector<string>& words, string word1, string word2) {
+
+        if(word1 == word2){
+            int last = -1, res = INT_MAX;
+            for(int i = 0; i < words.size(); i ++)
+                if(words[i] == word1){
+                    if(last != -1) res = min(res, i - last);
+                    last = i;
+                }
+            return res;
+        }
+
+        int last_index = -1, last_tag = 0, res = INT_MAX;
+        for(int i = 0; i < words.size(); i ++){
+            int cur_tag = 0;
+            if(words[i] == word1) cur_tag = 1;
+            else if(words[i] == word2) cur_tag = 2;
+
+            if(last_tag && cur_tag && cur_tag != last_tag)
+                res = min(res, i - last_index);
+
+            if(cur_tag)
+                last_index = i, last_tag = cur_tag;
+        }
+
+        return res;
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/strobogrammatic-number/
+
+#include <iostream>
+#include <map>
+
+using namespace std;
+
+class Solution {
+
+public:
+    bool isStrobogrammatic(string num) {
+
+        const map<char, char> table = {
+                {'0', '0'},
+                {'1', '1'},
+                {'6', '9'},
+                {'8', '8'},
+                {'9', '6'}
+        };
+
+        string r = "";
+        for(char c: num)
+            if(!table.count(c)) return false;
+            else r += table.at(c);
+        reverse(r.begin(), r.end());
+        return num == r;
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/strobogrammatic-number-ii/
+
+#include <iostream>
+#include <vector>
+#include <map>
+
+using namespace std;
+
+class Solution {
+
+private:
+    const map<char, char> table = {
+            {'0', '0'},
+            {'1', '1'},
+            {'6', '9'},
+            {'8', '8'},
+            {'9', '6'}
+    };
+
+public:
+    vector<string> findStrobogrammatic(int n) {
+
+        vector<string> res;
+        string cur(n, ' ');
+        dfs(0, n, cur, res);
+        return res;
+    }
+
+private:
+    void dfs(int index, int n, string& cur, vector<string>& res){
+
+        if(index > (n - 1) / 2){
+            res.push_back(cur);
+            return;
+        }
+
+        for(const pair<char, char>& p: table){
+
+            if(index == 0 && p.first == '0' && n > 1) continue;
+
+            if(n % 2 && index == n / 2 && (p.first == '6' || p.first == '9')) continue;
+
+            cur[index] = p.first;
+            cur[n - index - 1] = p.second;
+            dfs(index + 1, n, cur, res);
+        }
+    }
+};
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/strobogrammatic-number-iii/
+
+#include <iostream>
+#include <map>
+
+using namespace std;
+
+class Solution {
+
+private:
+    const map<char, char> table = {
+            {'0', '0'},
+            {'1', '1'},
+            {'6', '9'},
+            {'8', '8'},
+            {'9', '6'}
+    };
+
+public:
+    int strobogrammaticInRange(string low, string high) {
+
+        int res = 0;
+        for(int len = low.size(); len <= high.size(); len ++){
+            string cur(len, ' ');
+            res += dfs(0, len, to_long_long(low), to_long_long(high), cur);
+        }
+        return res;
+    }
+
+private:
+    int dfs(int index, int n, long long low, long long high, string& cur){
+
+        if(index > (n - 1) / 2){
+            long long num = to_long_long(cur);
+            return low <= num && num <= high;
+        }
+
+        int res = 0;
+        for(const pair<char, char>& p: table){
+
+            if(index == 0 && p.first == '0' && n > 1) continue;
+
+            if(n % 2 && index == n / 2 && (p.first == '6' || p.first == '9')) continue;
+
+            cur[index] = p.first;
+            cur[n - index - 1] = p.second;
+            res += dfs(index + 1, n, low, high, cur);
+        }
+        return res;
+    }
+
+    long long to_long_long(const string& s){
+        return atoll(s.c_str());
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/group-shifted-strings/description/
+
+#include <iostream>
+#include <vector>
+#include <unordered_map>
+#include <unordered_set>
+
+using namespace std;
+
+class Solution {
+
+public:
+    vector<vector<string>> groupStrings(vector<string>& strings) {
+
+        unordered_map<string, vector<string>> map;
+        for(const string& s: strings){
+            string key = getKey(s);
+            map[key].push_back(s);
+        }
+
+        vector<vector<string>> res;
+        for(const pair<string, vector<string>>& p: map)
+            res.push_back(p.second);
+        return res;
+    }
+
+private:
+    string getKey(string s){
+
+        int dis = 26 - (s[0] - 'a');
+        for(int i = 0; i < s.size(); i ++)
+            s[i] = 'a' + (s[i] + dis) % 26;
+        return s;
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+/// Source : https://leetcode.com/problems/count-univalue-subtrees/description/
+
+#include <iostream>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode *left;
+    TreeNode *right;
+    TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+};
+
+class Solution {
+
+private:
+    int result = 0;
+
+public:
+    int countUnivalSubtrees(TreeNode* root) {
+
+        dfs(root, NULL);
+        return result;
+    }
+
+private:
+    bool dfs(TreeNode* node, TreeNode* parent){
+
+        if(!node) return true;
+
+        bool isLeft = dfs(node->left, node), isRight = dfs(node->right, node);
+        if(!isLeft || !isRight) return false;
+
+        result ++;
+        return parent && node->val == parent->val;
+    }
+};
+
+
+int main() {
+
+//      5
+//     / \
+//    1  5
+//   / \  \
+//  5  5  5
+    TreeNode *root = new TreeNode(5);
+    root->left = new TreeNode(1);
+    root->right = new TreeNode(5);
+    root->left->left = new TreeNode(5);
+    root->left->right = new TreeNode(5);
+    root->right->right = new TreeNode(5);
+    cout << Solution().countUnivalSubtrees(root) << endl;
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/meeting-rooms/description/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+struct Interval {
+    int start;
+    int end;
+    Interval() : start(0), end(0) {}
+    Interval(int s, int e) : start(s), end(e) {}
+};
+
+class Solution {
+public:
+    bool canAttendMeetings(vector<Interval>& intervals) {
+
+        sort(intervals.begin(), intervals.end(), cmpIntervals);
+        for(int i = 1; i < intervals.size(); i ++)
+            if(intervals[i].start < intervals[i - 1].end)
+                return false;
+        return true;
+    }
+
+private:
+    static bool cmpIntervals(const Interval& i1, const Interval& i2){
+        if(i1.start != i2.start)
+            return i1.start < i2.start;
+        return i1.end < i2.end;
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/meeting-rooms-ii/description/
+
+#include <iostream>
+#include <vector>
+#include <queue>
+
+using namespace std;
+
+struct Interval {
+    int start;
+    int end;
+    Interval() : start(0), end(0) {}
+    Interval(int s, int e) : start(s), end(e) {}
+};
+
+class Solution {
+
+private:
+    class CompareInterval{
+    public:
+        bool operator()(const Interval& a, const Interval& b){
+            return a.end > b.end;
+        }
+    };
+
+public:
+    int minMeetingRooms(vector<Interval>& intervals) {
+
+        sort(intervals.begin(), intervals.end(), cmpIntervals);
+
+        priority_queue<Interval, vector<Interval>, CompareInterval> rooms;
+        int res = 0;
+        for(const Interval& meeting: intervals){
+
+            while(!rooms.empty() && rooms.top().end <= meeting.start)
+                rooms.pop();
+
+            rooms.push(meeting);
+            res = max(res, (int)rooms.size());
+        }
+
+        return res;
+    }
+
+private:
+    static bool cmpIntervals(const Interval& i1, const Interval& i2){
+        if(i1.start != i2.start)
+            return i1.start < i2.start;
+        return i1.end < i2.end;
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/factor-combinations/description/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    vector<vector<int>> getFactors(int n) {
+        vector<vector<int>> res;
+        for (int i = 2; i * i <= n; ++i) {
+            if (n % i != 0) continue;
+            vector<vector<int>> v = getFactors(n / i);
+            vector<int> out{i, n / i};
+            res.push_back(out);
+            for (auto a : v) {
+                if (i <= a[0]) {
+                    a.insert(a.begin(), i);
+                    res.push_back(a);
+                }
+            }
+        }
+        return res;
+    }
+};
+
+void print_vec(const vector<int>& vec){
+    for(int e: vec)
+        cout << e << " ";
+    cout << endl;
+}
+
+
+int main() {
+
+    vector<vector<int>> res1 = Solution().getFactors(1);
+    for(const vector<int>& a_res: res1)
+        print_vec(a_res);
+    cout << endl;
+
+    vector<vector<int>> res2 = Solution().getFactors(37);
+    for(const vector<int>& a_res: res2)
+        print_vec(a_res);
+    cout << endl;
+
+    vector<vector<int>> res3 = Solution().getFactors(12);
+    for(const vector<int>& a_res: res3)
+        print_vec(a_res);
+    cout << endl;
+
+    vector<vector<int>> res4 = Solution().getFactors(32);
+    for(const vector<int>& a_res: res4)
+        print_vec(a_res);
+    cout << endl;
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/flatten-2d-vector/
+
+class Vector2D {
+public:
+    Vector2D(vector<vector<int>>& vec2d): x(vec2d.begin()), end(vec2d.end()) {}
+    
+    int next() {
+        if (!hasNext()) throw std::runtime_error("No Such Element");
+        return (*x)[y++];
+    }
+    bool hasNext() {
+        while (x != end && y == (*x).size()) {
+            ++x; 
+            y = 0;
+        }
+        return x != end;
+    }
+private:
+    vector<vector<int>>::iterator x, end;
+    int y = 0;
+};
+
+// Source : https://leetcode.com/problems/verify-preorder-sequence-in-binary-search-tree/
+
+class Solution {
+public:
+    bool verifyPreorder(vector<int>& preorder) {
+        return helper(preorder, 0, preorder.size() - 1, INT_MIN, INT_MAX);
+    }
+    bool helper(vector<int>& preorder, int start, int end, int lower, int upper) {
+        if (start > end) return true;
+        int val = preorder[start], i = 0;
+        if (val <= lower || val >= upper) return false;
+        for (i = start + 1; i <= end; ++i) {
+            if (preorder[i] >= val) break;
+        }
+        return helper(preorder, start + 1, i - 1, lower, val) && helper(preorder, i, end, val, upper);
+    }
+};
+
+// Source : https://leetcode.com/problems/paint-house/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    int minCost(vector<vector<int>>& costs) {
+
+        int n = costs.size();
+
+        vector<vector<int>> dp(n, vector<int>(3, INT_MAX));
+        dp[0] = costs[0];
+        for(int i = 1; i < n; i ++)
+            for(int j = 0; j < 3; j ++){
+                for(int k = 0; k < 3; k ++)
+                    if(k != j) dp[i][j] = min(dp[i][j], dp[i - 1][k] + costs[i][j]);
+            }
+        return *min_element(dp.back().begin(), dp.back().end());
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/binary-tree-paths/description/
+
+#include <iostream>
+#include <string>
+#include <vector>
+#include <stack>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode *left;
+    TreeNode *right;
+    TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+};
+
+class Solution {
+public:
+    vector<string> binaryTreePaths(TreeNode* root) {
+
+        vector<string> res;
+        if(root == NULL)
+            return res;
+
+        stack<pair<TreeNode*, string>> stack;
+        stack.push(make_pair(root, to_string(root->val)));
+        while(!stack.empty()){
+            TreeNode* cur = stack.top().first;
+            string s = stack.top().second;
+            stack.pop();
+
+            if(!cur->left && !cur->right)
+                res.push_back(s);
+
+            if(cur->left)
+                stack.push(make_pair(cur->left, s + "->" + to_string(cur->left->val)));
+            if(cur->right)
+                stack.push(make_pair(cur->right, s + "->" + to_string(cur->right->val)));
+        }
+        return res;
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/add-digits/
+
+// 1    1
+// 2    2
+// 3    3
+// 4    4
+// 5    5
+// 6    6
+// 7    7
+// 8    8    
+// 9    9    
+// 10    1
+// 11    2
+// 12    3    
+// 13    4
+// 14    5
+// 15    6
+// 16    7
+// 17    8
+// 18    9
+// 19    1
+// 20    2
+
+//每9个一循环
+
+class Solution {
+public:
+    int addDigits(int num) {
+        return (num == 0) ? 0 : (num - 1) % 9 + 1;
+    }
+};
+
+// Source : https://leetcode.com/problems/3sum-smaller/
+#include <iostream>
+#include <vector>
+#include <cassert>
+#include <stdexcept>
+
+using namespace std;
+
+class Solution {
+public:
+    int threeSumSmaller(vector<int>& nums, int target) {
+
+        if(nums.size() < 3)
+            return 0;
+
+        sort(nums.begin(), nums.end());
+
+        int res = 0;
+        for(int i = 0 ; i < nums.size() - 2 ; i ++){
+
+            int j = i + 1, k = nums.size() - 1;
+            while(j < k){
+
+                if(nums[i] + nums[j] + nums[k] < target){
+                    res += (k - j);
+                    j ++;
+                }
+                else
+                    k --;
+            }
+        }
+        return res;
+    }
+};
+
+
+int main() {
+
+    vector<int> nums1 = {-2, 0, 1, 3};
+    int target1 = 4;
+    cout << Solution().threeSumSmaller(nums1, target1) << endl;
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/single-number-iii/
+
+class Solution {
+public:
+    vector<int> singleNumber(vector<int>& nums) {
+        unsigned int diff = accumulate(nums.begin(), nums.end(), 0, bit_xor<int>());
+        diff &= -diff;
+        vector<int> res(2, 0);
+        for (auto &a : nums) {
+            if (a & diff) res[0] ^= a;
+            else res[1] ^= a;
+        }
+        return res;
+    }
+};
+
+// Source : https://leetcode.com/problems/graph-valid-tree/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    bool validTree(int n, vector<vector<int>>& edges) {
+
+        if(edges.size() != n - 1) return false;
+
+        vector<vector<int>> g(n);
+        for(const vector<int>& e: edges)
+            g[e[0]].push_back(e[1]), g[e[1]].push_back(e[0]);
+
+        vector<bool> visited(n, false);
+        int cc = 0;
+        for(int i = 0; i < n; i ++)
+            if(!visited[i]){
+                dfs(g, i, visited);
+                cc ++;
+            }
+        return cc == 1;
+    }
+
+private:
+    void dfs(const vector<vector<int>>& g, int u, vector<bool>& visited){
+
+        visited[u] = true;
+        for(int v: g[u])
+            if(!visited[v]) dfs(g, v, visited);
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/ugly-number/
+
+#include <iostream>
+
+using namespace std;
+
+class Solution {
+public:
+    bool isUgly(int n) {
+
+        if(n == 0) return false;
+
+        while(n % 2 == 0) n /= 2;
+        while(n % 3 == 0) n /= 3;
+        while(n % 5 == 0) n /= 5;
+        return n == 1;
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/ugly-number-ii/
+
+#include <iostream>
+#include <set>
+
+using namespace std;
+
+class Solution {
+public:
+    int nthUglyNumber(int n) {
+
+        set<long long> set;
+        set.insert(1);
+        for(int i = 0; i < n - 1; i ++){
+            long long x = *set.begin();
+            set.erase(x);
+            set.insert(x * 2);
+            set.insert(x * 3);
+            set.insert(x * 5);
+        }
+        return *set.begin();
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/paint-house-ii/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    int minCostII(vector<vector<int>>& costs) {
+
+        int n = costs.size(), k = costs[0].size();
+
+        vector<vector<int>> dp(n, vector<int>(k, INT_MAX));
+        dp[0] = costs[0];
+        for(int i = 1; i < n; i ++)
+            for(int j = 0; j < k; j ++){
+                for(int kk = 0; kk < k; kk ++)
+                    if(kk != j) dp[i][j] = min(dp[i][j], dp[i - 1][kk] + costs[i][j]);
+            }
+        return *min_element(dp.back().begin(), dp.back().end());
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/palindrome-permutation/
+
+#include <iostream>
+#include <vector>
+using namespace std;
+
+class Solution {
+public:
+    bool canPermutePalindrome(string s) {
+
+        map<char, int> freq;
+        for(char c: s)
+            freq[c] ++;
+
+        int even = 0, odd = 0;
+        for(const pair<char, int>& p: freq)
+            if(p.second % 2) odd ++;
+            else even ++;
+
+        return odd <= 1;
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/palindrome-permutation-ii/
+
+#include <iostream>
+#include <vector>
+#include <map>
+
+using namespace std;
+
+class Solution {
+public:
+    vector<string> generatePalindromes(string s) {
+
+        map<char, int> freq;
+        for(char c: s)
+            freq[c] ++;
+
+        int even = 0, odd = 0;
+        char oddchar = 0;
+        for(const pair<char, int>& p: freq)
+            if(p.second % 2)
+                odd ++, oddchar = p.first;
+            else even ++;
+
+        if(odd > 1) return {};
+
+        string cur(s.size(), oddchar);
+        if(oddchar) freq[oddchar] --;
+        vector<string> res;
+        dfs(freq, 0, cur, res);
+        return res;
+    }
+
+private:
+    void dfs(map<char, int>& freq, int index, string& cur, vector<string>& res){
+
+        if(index >= cur.size() / 2){
+            res.push_back(cur);
+            return;
+        }
+
+        for(const pair<char, int>& p: freq)
+            if(p.second){
+                cur[index] = cur[cur.size() - index - 1] = ch;
+                freq[p.first] -= 2;
+                dfs(freq, index + 1, cur, res);
+                freq[p.first] += 2;
+            }
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/missing-number/description/
+
+#include <iostream>
+#include <vector>
+#include <numeric>
+
+using namespace std;
+
+class Solution {
+public:
+    int missingNumber(vector<int>& nums) {
+        int res = 0;
+        for(int i = 1 ; i <= nums.size() ; i ++)
+            res ^= i;
+        for(int num: nums)
+            res ^= num;
+        return res;
+    }
+};
+
+int main() {
+
+    int nums[3] = {0, 1, 3};
+    vector<int> vec(nums, nums + 3);
+    cout << Solution().missingNumber(vec) << endl;
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/alien-dictionary/
+
+#include <iostream>
+#include <map>
+#include <set>
+#include <vector>
+#include <queue>
+#include <numeric>
+
+using namespace std;
+
+class Solution {
+public:
+    string alienOrder(vector<string>& words) {
+        set<pair<char, char>> st;
+        unordered_set<char> ch;
+        vector<int> in(256);
+        queue<char> q;
+        string res;
+        for (auto a : words) ch.insert(a.begin(), a.end());
+        for (int i = 0; i < (int)words.size() - 1; ++i) {
+            for( int k = i + 1; k < (int)words.size(); ++k) {
+                int mn = min(words[i].size(), words[k].size()), j = 0;
+                for (; j < mn; ++j) {
+                    if (words[i][j] != words[k][j]) {
+                        st.insert(make_pair(words[i][j], words[k][j]));
+                        break;
+                    }
+                }
+                if (j == mn && words[i].size() > words[k].size()) return "";
+            }
+        }
+        for (auto a : st) ++in[a.second];
+        for (auto a : ch) {
+            if (in[a] == 0) {
+                q.push(a);
+                res += a;
+            } 
+        }
+        while (!q.empty()) {
+            char c = q.front(); q.pop();
+            for (auto a : st) {
+                if (a.first == c) {
+                    --in[a.second];
+                    if (in[a.second] == 0) {
+                        q.push(a.second);
+                        res += a.second;
+                    }
+                }
+            }
+        }
+        return res.size() == ch.size() ? res : "";
+    }
+};
+
+// Source : https://leetcode.com/problems/closest-binary-search-tree-value/
+
+class Solution {
+public:
+    int closestValue(TreeNode* root, double target) {
+        int res = root->val;
+        while (root) {
+            if (abs(res - target) >= abs(root->val - target)) {
+                res = root->val;
+            }
+            root = target < root->val ? root->left : root->right;
+        }
+        return res;
+    }
+};
+
+// Source : https://leetcode.com/problems/encode-and-decode-strings/
+
+class Codec {
+public:
+    // Encodes a list of strings to a single string.
+    string encode(vector<string>& strs) {
+        string res = "";
+        for (string str : strs) res += str + '\0';
+        return res;
+    }
+    // Decodes a single string to a list of strings.
+    vector<string> decode(string s) {
+        vector<string> res;
+        stringstream ss(s);
+        string t;
+        while (getline(ss, t, '\0')) {
+            res.push_back(t);
+        }
+        return res;
+    }
+};
+
+// Source : https://leetcode.com/problems/closest-binary-search-tree-value-ii/
+
+class Solution {
+public:
+    vector<int> closestKValues(TreeNode* root, double target, int k) {
+        vector<int> res;
+        priority_queue<pair<double, int>> q;
+        inorder(root, target, k, q);
+        while (!q.empty()) {
+            res.push_back(q.top().second);
+            q.pop();
+        }
+        return res;
+    }
+    void inorder(TreeNode *root, double target, int k, priority_queue<pair<double, int>> &q) {
+        if (!root) return;
+        inorder(root->left, target, k, q);
+        q.push({abs(root->val - target), root->val});
+        if (q.size() > k) q.pop();
+        inorder(root->right, target, k, q);
+    }
+};
+
+// Source : https://leetcode.com/problems/integer-to-english-words/
+
+class Solution {
+public:
+    string numberToWords(int num) {
+        string res = convertHundred(num % 1000);
+        vector<string> v = {"Thousand", "Million", "Billion"};
+        for (int i = 0; i < 3; ++i) {
+            num /= 1000;
+            res = num % 1000 ? convertHundred(num % 1000) + " " + v[i] + " " + res : res;
+        }
+        while (res.back() == ' ') res.pop_back();
+        return res.empty() ? "Zero" : res;
+    }
+    string convertHundred(int num) {
+        vector<string> v1 = {"", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"};
+        vector<string> v2 = {"", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"};
+        string res;
+        int a = num / 100, b = num % 100, c = num % 10;
+        res = b < 20 ? v1[b] : v2[b / 10] + (c ? " " + v1[c] : "");
+        if (a > 0) res = v1[a] + " Hundred" + (b ? " " + res : "");
+        return res;
+    }
+};
+
+// Source : https://leetcode.com/problems/h-index/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    int hIndex(vector<int>& citations) {
+
+        sort(citations.begin(), citations.end());
+
+        for(int h = citations.back(); h >= 0; h --){
+            int x = citations.end() - lower_bound(citations.begin(), citations.end(), h);
+            if(x >= h) return h;
+        }
+        return -1;
+    }
+};
+
+int main() {
+
+    vector<int> citations1 = {100};
+    cout << Solution().hIndex(citations1) << endl;
+    // 1
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/h-index-ii/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    int hIndex(vector<int>& citations) {
+
+        for(int h = citations.back(); h >= 0; h --){
+            int x = citations.end() - lower_bound(citations.begin(), citations.end(), h);
+            if(x >= h) return h;
+        }
+        return -1;
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/paint-fence/
+
+class Solution {
+public:
+    int numWays(int n, int k) {
+        if (n == 0) return 0;
+        int same = 0, diff = k;
+        for (int i = 2; i <= n; ++i) {
+            int t = diff;
+            diff = (same + diff) * (k - 1);
+            same = t;
+        }
+        return same + diff;
+    }
+};
+
+// Source : https://leetcode.com/problems/find-the-celebrity/
+
+bool knows(int a, int b);
+
+class Solution {
+public:
+    int findCelebrity(int n) {
+        int res = 0;
+        for (int i = 0; i < n; ++i) {
+            if (knows(res, i)) res = i;
+        }
+        for (int i = 0; i < res; ++i) {
+            if (knows(res, i) || !knows(i, res)) return -1;
+        }
+        for (int i = res + 1; i < n; ++i) {
+            if (knows(res, i) || !knows(i, res)) return -1;
+        }
+        return res;
+    }
+};
+
+// Source : https://leetcode.com/problems/first-bad-version/
+
+#include <iostream>
+
+using namespace std;
+
+bool isBadVersion(int version);
+
+class Solution {
+public:
+    int firstBadVersion(int n) {
+
+        int l = 1, r = n;
+        while(l < r){
+            int mid = l + (r - l) / 2;
+            if(isBadVersion(mid)) r = mid;
+            else l = mid + 1;
+        }
+        return l;
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/perfect-squares/
+
+//四平方和定理： 每个正整数都可以表示为至多4个正整数的平方和。 如果把0包括进去，每个正整数都可以表示为4个数的平方和。
+
+class Solution {
+public:
+    int numSquares(int n) {
+        while (n % 4 == 0) n /= 4;
+        if (n % 8 == 7) return 4;
+        for (int a = 0; a * a <= n; ++a) {
+            int b = sqrt(n - a * a);
+            if (a * a + b * b == n) {
+                return !!a + !!b;
+            }
+        }
+        return 3;
+    }
+};
+
+// Source : https://leetcode.com/problems/wiggle-sort/
+
+class Solution {
+public:
+    void wiggleSort(vector<int>& nums) {
+        sort(nums.begin(), nums.end());
+        if (nums.size() <= 2) return;
+        for (int i = 2; i < nums.size(); i += 2) {
+            swap(nums[i], nums[i - 1]);
+        }
+    }
+};
+
+// Source : https://leetcode.com/problems/zigzag-iterator/
+
+class ZigzagIterator {
+public:
+    ZigzagIterator(vector<int>& v1, vector<int>& v2) {
+        vec1 = &v1;
+        vec2 = &v2;
+        i = j = 0;
+        cur = 0;
+    }
+    int next() {
+        return cur ? (*vec2)[j++] : (*vec1)[i++];
+    }
+    bool hasNext() {
+        if (i >= v[0].size()) cur = 1;
+        if (j >= v[1].size()) cur = 2;
+        if (cur >= 2) return false;
+        return true;
+    }
+private:
+    vector<int>* vec1;
+    vector<int>* vec2;
+    int i, j;
+    int cur;
+};
+
+// Source : https://leetcode.com/problems/expression-add-operators/
+
+class Solution {
+public:
+    vector<string> addOperators(string num, int target) {
+        vector<string> res;
+        helper(num, target, 0, 0, "", res);
+        return res;
+    }
+    void helper(string num, int target, long diff, long curNum, string out, vector<string>& res) {
+        if (num.size() == 0 && curNum == target) {
+            res.push_back(out); return;
+        }
+        for (int i = 1; i <= num.size(); ++i) {
+            string cur = num.substr(0, i);
+            if (cur.size() > 1 && cur[0] == '0') return;
+            string next = num.substr(i);
+            if (out.size() > 0) {
+                helper(next, target, stoll(cur), curNum + stoll(cur), out + "+" + cur, res);
+                helper(next, target, -stoll(cur), curNum - stoll(cur), out + "-" + cur, res);
+                helper(next, target, diff * stoll(cur), (curNum - diff) + diff * stoll(cur), out + "*" + cur, res);
+            } else {
+                helper(next, target, stoll(cur), stoll(cur), cur, res);
+            }
+        }
+    }
+
+};
+
+// Source : https://leetcode.com/problems/move-zeroes/description/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    void moveZeroes(vector<int>& nums) {
+
+        int k = 0; // keep nums[0...k) are all zero elements
+        for(int i = 0 ; i < nums.size() ; i ++ )
+            if(nums[i])
+                nums[k++] = nums[i];
+
+        // make the nums[k...end) zeros
+        for(int i = k ; i < nums.size() ; i ++)
+            nums[i] = 0;
+    }
+};
+
+
+void printVec(const vector<int>& vec){
+    for(int e: vec)
+        cout << e << " ";
+    cout << endl;
+}
+
+int main() {
+
+    int arr[] = {0, 1, 0, 3, 12};
+    vector<int> vec(arr, arr + sizeof(arr) / sizeof(int));
+    Solution().moveZeroes(vec);
+    printVec(vec);
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/peeking-iterator/
+
+class Iterator {
+    struct Data;
+    Data* data;
+public:
+    Iterator(const vector<int>& nums);
+    Iterator(const Iterator& iter);
+    virtual ~Iterator();
+    // Returns the next element in the iteration.
+    int next();
+    // Returns true if the iteration has more elements.
+    bool hasNext() const;
+};
+
+class PeekingIterator : public Iterator {
+public:
+    PeekingIterator(const vector<int>& nums) : Iterator(nums) {}
+
+    int peek() {
+        return Iterator(*this).next();
+    }
+
+    int next() {
+        return Iterator::next();
+    }
+
+    bool hasNext() const {
+        return Iterator::hasNext();
+    }
+};
+
+// Source : https://leetcode.com/problems/inorder-successor-in-bst/
+
+class Solution {
+public:
+    TreeNode* inorderSuccessor(TreeNode* root, TreeNode* p) {
+        stack<TreeNode*> s;
+        bool b = false;
+        TreeNode *t = root;
+        while (t || !s.empty()) {
+            while (t) {
+                s.push(t);
+                t = t->left;
+            }
+            t = s.top(); s.pop();
+            if (b) return t;
+            if (t == p) b = true;
+            t = t->right;
+        }
+        return NULL;
+    }
+};
+
+// Source : https://leetcode.com/problems/walls-and-gates/description/
+
+#include <iostream>
+#include <vector>
+#include <queue>
+
+using namespace std;
+
+class Solution {
+public:
+    void wallsAndGates(vector<vector<int>>& rooms) {
+        queue<pair<int, int>> q;
+        vector<vector<int>> dirs{{0, -1}, {-1, 0}, {0, 1}, {1, 0}};
+        for (int i = 0; i < rooms.size(); ++i) {
+            for (int j = 0; j < rooms[i].size(); ++j) {
+                if (rooms[i][j] == 0) q.push({i, j});   
+            }
+        }
+        while (!q.empty()) {
+            int i = q.front().first, j = q.front().second; q.pop();
+            for (int k = 0; k < dirs.size(); ++k) {
+                int x = i + dirs[k][0], y = j + dirs[k][1];
+                if (x < 0 || x >= rooms.size() || y < 0 || y >= rooms[0].size() || rooms[x][y] < rooms[i][j] + 1) continue;
+                rooms[x][y] = rooms[i][j] + 1;
+                q.push({x, y});
+            }
+        }
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/find-the-duplicate-number/
+
+class Solution {
+public:
+    int findDuplicate(vector<int>& nums) {
+        int res = 0, n = nums.size();
+        for (int i = 0; i < 32; ++i) {
+            int bit = (1 << i), cnt1 = 0, cnt2 = 0;
+            for (int k = 0; k < n; ++k) {
+                if ((k & bit) > 0) ++cnt1;
+                if ((nums[k] & bit) > 0) ++cnt2;
+            }
+            if (cnt2 > cnt1) res += bit;
+        }
+        return res;
+    }
+};
+
+// Source : https://leetcode.com/problems/unique-word-abbreviation/
+
+class ValidWordAbbr {
+public:
+    ValidWordAbbr(vector<string>& dictionary) {
+        for (auto a : dictionary) {
+            string k = a;
+            if (a.size() > 2) k = a[0] + to_string(a.size() - 2) + a.back();
+            if (m.find(k) != m.end() && m[k] != a) m[k] = "";
+            else m[k] = a;
+        }
+    }
+    bool isUnique(string word) {
+        string k = word;
+        if (word.size() > 2) k = word[0] + to_string(word.size() - 2) + word.back();
+        return m.find(k) == m.end() || m[k] == word;
+    }
+private:
+    unordered_map<string, string> m;
+};
+
+// Source : https://leetcode.com/problems/game-of-life/
+
+class Solution {
+public:
+    void gameOfLife(vector<vector<int> >& board) {
+        int m = board.size(), n = m ? board[0].size() : 0;
+        vector<int> dx{-1, -1, -1, 0, 1, 1, 1, 0};
+        vector<int> dy{-1, 0, 1, 1, 1, 0, -1, -1};
+        for (int i = 0; i < m; ++i) {
+            for (int j = 0; j < n; ++j) {
+                int cnt = 0;
+                for (int k = 0; k < 8; ++k) {
+                    int x = i + dx[k], y = j + dy[k];
+                    if (x >= 0 && x < m && y >= 0 && y < n && (board[x][y] == 1 || board[x][y] == 2)) {
+                        ++cnt;
+                    }
+                }
+                if (board[i][j] && (cnt < 2 || cnt > 3)) board[i][j] = 2;
+                else if (!board[i][j] && cnt == 3) board[i][j] = 3;
+            }
+        }
+        for (int i = 0; i < m; ++i) {
+            for (int j = 0; j < n; ++j) {
+                board[i][j] %= 2;
+            }
+        }
+    }
+
+};
+
+// Source : https://leetcode.com/problems/word-pattern/description/
+
+#include <iostream>
+#include <vector>
+#include <unordered_map>
+#include <string>
+
+using namespace std;
+
+class Solution {
+
+public:
+    bool wordPattern(string pattern, string str) {
+
+        vector<string> words = split(str);
+        if(pattern.size() != words.size())
+            return false;
+
+        unordered_map<char, string> map1;
+        unordered_map<string, char> map2;
+        for(int i = 0 ; i < pattern.size() ; i++)
+            if(map1.find(pattern[i]) == map1.end()){
+                if(map2.find(words[i]) != map2.end())
+                    return false;
+                map1[pattern[i]] = words[i];
+                map2[words[i]] = pattern[i];
+            }
+            else{
+                string s = map1[pattern[i]];
+                if(s != words[i])
+                    return false;
+            }
+
+        return true;
+    }
+
+private:
+    vector<string> split(const string& s){
+
+        vector<string> res;
+        int start = 0;
+        for(int i = start + 1 ; i <= s.size() ; )
+            if(i == s.size() || s[i] == ' '){
+                res.push_back(s.substr(start, i - start));
+                start = i + 1;
+                i = start + 1;
+            }
+            else
+                i ++;
+        return res;
+    }
+};
+
+
+void print_bool(bool res){
+    cout << (res ? "True" : "False") << endl;
+}
+
+int main() {
+
+    string pattern1 = "abba";
+    string str1 = "dog cat cat dog";
+    print_bool(Solution().wordPattern(pattern1, str1));
+
+    string pattern2 = "abba";
+    string str2 = "dog cat cat fish";
+    print_bool(Solution().wordPattern(pattern2, str2));
+
+    string pattern3 = "aaaa";
+    string str3 = "dog cat cat dog";
+    print_bool(Solution().wordPattern(pattern3, str3));
+
+    string pattern4 = "abba";
+    string str4 = "dog dog dog dog";
+    print_bool(Solution().wordPattern(pattern4, str4));
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/word-pattern-ii/
+
+class Solution {
+public:
+    bool wordPatternMatch(string pattern, string str) {
+        unordered_map<char, string> m;
+        unordered_set<string> st;
+        return helper(pattern, 0, str, 0, m, st);
+    }
+    bool helper(string pattern, int p, string str, int r, unordered_map<char, string> &m, unordered_set<string> &st) {
+        if (p == pattern.size() && r == str.size()) return true;
+        if (p == pattern.size() || r == str.size()) return false;
+        char c = pattern[p];
+        for (int i = r; i < str.size(); ++i) {
+            string t = str.substr(r, i - r + 1);
+            if (m.count(c) && m[c] == t) {
+                if (helper(pattern, p + 1, str, i + 1, m, st)) return true;
+            } else if (!m.count(c)) {
+                if (st.count(t)) continue;
+                m[c] = t;
+                st.insert(t);
+                if (helper(pattern, p + 1, str, i + 1, m, st)) return true;
+                m.erase(c);
+                st.erase(t);
+            }
+        }
+        return false;
+    }
+
+};
+
+// Source : https://leetcode.com/problems/nim-game/
+
+//n为1到10的情况如下：
+//1    Win
+//2    Win
+//3    Win
+//4    Lost
+//5    Win
+//6    Win
+//7    Win
+//8    Lost
+//9    Win
+//10   Win
+//只要是4的倍数，结果就是Lost，所以对4取余即可
+
+class Solution {
+public:
+    bool canWinNim(int n) {
+        return n % 4;
+    }
+};
+
+// Source : https://leetcode.com/problems/flip-game/
+
+class Solution {
+public:
+    vector<string> generatePossibleNextMoves(string s) {
+        vector<string> res;
+        for (int i = 1; i < s.size(); ++i) {
+            if (s[i] == '+' && s[i - 1] == '+') {
+                res.push_back(s.substr(0, i - 1) + "--" + s.substr(i + 1));
+            }
+        }
+        return res;
+    }
+};
+
+// Source : https://leetcode.com/problems/flip-game-ii/
+
+class Solution {
+public:
+    bool canWin(string s) {
+        for (int i = 1; i < s.size(); ++i) {
+            if (s[i] == '+' && s[i - 1] == '+' && !canWin(s.substr(0, i - 1) + "--" + s.substr(i + 1))) {
+                return true;
+            }
+        }
+        return false;
+    }
+};
+
+// Source : https://leetcode.com/problems/find-median-from-data-stream/
+
+#include <iostream>
+#include <map>
+#include <queue>
+
+using namespace std;
+
+class MedianFinder {
+
+private:
+    priority_queue<int> left; // maxheap
+    priority_queue<int, vector<int>, greater<int>> right; // minheap
+
+public:
+    /** initialize your data structure here. */
+    MedianFinder() {}
+
+    void addNum(int num) {
+
+        if(!left.size() && !right.size()){
+            left.push(num);
+            return;
+        }
+
+        if((left.size() + right.size()) % 2){ // odd
+            if(num >= left.top()) right.push(num);
+            else{
+                right.push(left.top());
+                left.pop();
+                left.push(num);
+            }
+        }
+        else{ // even
+            if(num <= right.top()) left.push(num);
+            else{
+                left.push(right.top());
+                right.pop();
+                right.push(num);
+            }
+        }
+    }
+
+    double findMedian() {
+
+        if((left.size() + right.size()) % 2) return left.top();
+        return (left.top() + right.top()) / 2.0;
+    }
+};
+
+
+int main() {
+
+    MedianFinder mf;
+    mf.addNum(40);
+    cout << "after adding 40 : " << mf.findMedian() << endl; // 40
+
+    mf.addNum(12);
+    cout << "after adding 12 : " << mf.findMedian() << endl; // 26
+
+    mf.addNum(16);
+    cout << "after adding 16 : " << mf.findMedian() << endl; // 16
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/best-meeting-point/
+
+class Solution {
+public:
+    int minTotalDistance(vector<vector<int>>& grid) {
+        vector<int> rows, cols;
+        for (int i = 0; i < grid.size(); ++i) {
+            for (int j = 0; j < grid[i].size(); ++j) {
+                if (grid[i][j] == 1) {
+                    rows.push_back(i);
+                    cols.push_back(j);
+                }
+            }
+        }
+        return minTotalDistance(rows) + minTotalDistance(cols);
+    }
+    int minTotalDistance(vector<int> v) {
+        int res = 0;
+        sort(v.begin(), v.end());
+        int i = 0, j = v.size() - 1;
+        while (i < j) res += v[j--] - v[i++];
+        return res;
+    }
+};
+
+// Source : https://leetcode.com/problems/serialize-and-deserialize-binary-tree/description/
+
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <cassert>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode *left;
+    TreeNode *right;
+    TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+};
+
+class Codec {
+public:
+
+    // Encodes a tree to a single string.
+    string serialize(TreeNode* root) {
+
+        if(!root)
+            return "[null]";
+
+        string ret = "[";
+
+        queue<TreeNode*> q;
+        q.push(root);
+        ret += to_string(root->val);
+        while(!q.empty()){
+            TreeNode* cur = q.front();
+            q.pop();
+
+            if(cur->left){
+                ret += "," + to_string(cur->left->val);
+                q.push(cur->left);
+            }
+            else
+                ret += ",null";
+
+            if(cur->right){
+                ret += "," + to_string(cur->right->val);
+                q.push(cur->right);
+            }
+            else
+                ret += ",null";
+        }
+        return ret + "]";
+    }
+
+    // Decodes your encoded data to tree.
+    TreeNode* deserialize(string data) {
+        vector<string> vec = get_vector(data);
+
+        if(vec.size() == 0 || (vec.size() == 1 && vec[0] == "null"))
+            return NULL;
+
+        TreeNode* root = new TreeNode(atoi(vec[0].c_str()));
+        queue<TreeNode*> q;
+        q.push(root);
+        int index = 1;
+        while(!q.empty()){
+            TreeNode* cur = q.front();
+            q.pop();
+
+            if(vec[index] != "null"){
+                cur->left = new TreeNode(atoi(vec[index].c_str()));
+                q.push(cur->left);
+            }
+            index ++;
+
+            if(vec[index] != "null"){
+                cur->right = new TreeNode(atoi(vec[index].c_str()));
+                q.push(cur->right);
+            }
+            index ++;
+        }
+        return root;
+    }
+
+private:
+    vector<string> get_vector(const string& data){
+
+        string s = data.substr(1, data.size() - 2) + ",";
+
+        vector<string> res;
+        int i = 0;
+        while(i < s.size()){
+            int comma = s.find(',', i);
+            res.push_back(s.substr(i, comma - i));
+            i = comma + 1;
+        }
+        return res;
+    }
+};
+
+
+int main() {
+
+    TreeNode* root = new TreeNode(1);
+    root->left = new TreeNode(2);
+    root->right = new TreeNode(3);
+    root->right->left = new TreeNode(4);
+    root->right->right = new TreeNode(5);
+
+    string s = Codec().serialize(root);
+    cout << s << endl;
+
+    TreeNode* x = Codec().deserialize(s);
+    cout << Codec().serialize(x) << endl;
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/binary-tree-longest-consecutive-sequence/
+
+#include <iostream>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode *left;
+    TreeNode *right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+};
+
+class Solution {
+
+private:
+    int res = 0;
+
+public:
+    int longestConsecutive(TreeNode* root) {
+
+        res = 0;
+        dfs(root, 1);
+        return res;
+    }
+
+private:
+    void dfs(TreeNode* node, int k){
+
+        res = max(res, k);
+
+        if(node->left){
+            if(node->left->val == node->val + 1) dfs(node->left, k + 1);
+            else dfs(node->left, 1);
+        }
+
+        if(node->right){
+            if(node->right->val == node->val + 1) dfs(node->right, k + 1);
+            else dfs(node->right, 1);
+        }
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/bulls-and-cows/
+
+class Solution {
+public:
+    string getHint(string secret, string guess) {
+        int m[256] = {0}, bulls = 0, cows = 0;
+        for (int i = 0; i < secret.size(); ++i) {
+            if (secret[i] == guess[i]) ++bulls;
+            else ++m[secret[i]];
+        }
+        for (int i = 0; i < secret.size(); ++i) {
+            if (secret[i] != guess[i] && m[guess[i]]) {
+                ++cows;
+                --m[guess[i]];
+            }
+        }
+        return to_string(bulls) + "A" + to_string(cows) + "B";
+    }
+};
+
+// Source : https://leetcode.com/problems/longest-increasing-subsequence/
+
+class Solution {
+public:
+    int lengthOfLIS(vector<int>& nums) {
+        vector<int> v;
+        for (auto a : nums) {
+            auto it = lower_bound(v.begin(), v.end(), a);
+            if (it == v.end()) v.push_back(a);
+            else *it = a;
+        }
+        return v.size();
+    }
+
+};
+
+// Source : https://leetcode.com/problems/remove-invalid-parentheses/
+
+class Solution {
+public:
+    vector<string> removeInvalidParentheses(string s) {
+        vector<string> res;
+        unordered_set<string> visited{{s}};
+        queue<string> q{{s}};
+        bool found = false;
+        while (!q.empty()) {
+            string t = q.front(); q.pop();
+            if (isValid(t)) {
+                res.push_back(t);
+                found = true;
+            }
+            if (found) continue;
+            for (int i = 0; i < t.size(); ++i) {
+                if (t[i] != '(' && t[i] != ')') continue;
+                string str = t.substr(0, i) + t.substr(i + 1);
+                if (!visited.count(str)) {
+                    q.push(str);
+                    visited.insert(str);
+                }
+            }
+        }
+        return res;
+    }
+    bool isValid(string t) {
+        int cnt = 0;
+        for (int i = 0; i < t.size(); ++i) {
+            if (t[i] == '(') ++cnt;
+            else if (t[i] == ')' && --cnt < 0) return false;
+        }
+        return cnt == 0;
+    }
+};
+
+// Source : https://leetcode.com/problems/smallest-rectangle-enclosing-black-pixels/
+
+class Solution {
+public:
+    int minArea(vector<vector<char>>& image, int x, int y) {
+        rows = image.size();
+        if (rows == 0) return 0;
+        cols = image[0].size();
+        if (cols == 0) return 0;
+        DFS(image, x, y);
+        if ( (right-left+1) > 0 && (bot-top+1) > 0) {
+            return (right-left+1)*(bot-top+1);
+        }
+        return 0;
+    }
+private:
+    void DFS(vector<vector<char>>& image, int x, int y)
+    {
+        if(x<0 || x>=rows || y<0 || y>=cols || image[x][y]=='0') return;
+        left = min(left, y);
+        right = max(right, y);
+        top = min(top, x);
+        bot = max(bot, x);
+        image[x][y] = '0';
+        DFS(image, x+1, y);
+        DFS(image, x-1, y);
+        DFS(image, x, y+1);
+        DFS(image, x, y-1);
+    }
+    int rows = 0, cols = 0;
+    int left = INT_MAX, right=INT_MIN, top=INT_MAX, bot = INT_MIN;
+};
+
+// Source : https://leetcode.com/problems/range-sum-query-immutable/description/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class NumArray {
+
+private:
+    vector<int> sum;
+
+public:
+    NumArray(vector<int> nums) {
+        sum.push_back(0);
+        for(int num: nums)
+            sum.push_back(sum.back() + num);
+    }
+
+    int sumRange(int i, int j) {
+        j ++;
+        return sum[j] - sum[i];
+    }
+};
+
+int main() {
+
+    int nums[] = {-2, 0, 3, -5, 2, -1};
+    vector<int> vec(nums, nums + sizeof(nums)/sizeof(int));
+    NumArray obj(vec);
+
+    cout << obj.sumRange(0, 2) << endl;
+    cout << obj.sumRange(2, 5) << endl;
+    cout << obj.sumRange(0, 5) << endl;
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/range-sum-query-2d-immutable/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class NumMatrix {
+
+private:
+    vector<vector<int>> dp;
+
+public:
+    NumMatrix(vector<vector<int>>& matrix) {
+
+        int R = matrix.size();
+        if(R == 0) return;
+
+        int C = matrix[0].size();
+        if(C == 0) return;
+
+        dp = vector<vector<int>>(R + 1, vector<int>(C + 1, 0));
+
+        for(int i = 1; i <= R; i ++)
+            for(int j = 1; j <= C; j ++)
+                dp[i][j] = matrix[i-1][j-1] + dp[i-1][j] + dp[i][j-1] - dp[i-1][j-1];
+    }
+
+    int sumRegion(int row1, int col1, int row2, int col2) {
+
+        return dp[row2 + 1][col2 + 1] - dp[row1][col2 + 1] - dp[row2 + 1][col1] + dp[row1][col1];
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/number-of-islands-ii/
+
+class Solution {
+public:
+    vector<int> numIslands2(int m, int n, vector<vector<int>>& positions) {
+        vector<int> res;
+        int cnt = 0;
+        vector<int> roots(m * n, -1);
+        vector<vector<int>> dirs{{0, -1}, {-1, 0}, {0, 1}, {1, 0}};
+        for (auto &pos : positions) {
+            int id = n * pos[0] + pos[1];
+            if (roots[id] != -1) {
+                res.push_back(cnt);
+                continue;
+            }
+            roots[id] = id;
+            ++cnt;
+            for (auto dir : dirs) {
+                int x = pos[0] + dir[0], y = pos[1] + dir[1], cur_id = n * x + y;
+                if (x < 0 || x >= m || y < 0 || y >= n || roots[cur_id] == -1) continue;
+                int p = findRoot(roots, cur_id), q = findRoot(roots, id);
+                if (p != q) {
+                    roots[p] = q;
+                    --cnt;
+                }
+            }
+            res.push_back(cnt);
+        }
+        return res;
+    }
+    int findRoot(vector<int>& roots, int id) {
+        return (id == roots[id]) ? id : findRoot(roots, roots[id]);
+    }
+};
+
+// Source : https://leetcode.com/problems/additive-number/
+
+class Solution {
+public:
+    bool isAdditiveNumber(string num) {
+        for (int i = 1; i < num.size(); ++i) {
+            string s1 = num.substr(0, i);
+            if (s1.size() > 1 && s1[0] == '0') break;
+            for (int j = i + 1; j < num.size(); ++j) {
+                string s2 = num.substr(i, j - i);
+                long d1 = stol(s1), d2 = stol(s2);
+                if ((s2.size() > 1 && s2[0] == '0')) break;
+                long next = d1 + d2;
+                string nextStr = to_string(next);
+                if (nextStr != num.substr(j, nextStr.length())) continue; // optimization here
+                string allStr = s1 + s2 + nextStr;
+                while (allStr.size() < num.size()) {
+                    d1 = d2;
+                    d2 = next;
+                    next = d1 + d2;
+                    nextStr = to_string(next);
+                    allStr += nextStr;
+                }
+                if (allStr == num) return true;
+            }
+        }
+        return false;
+    }
+
+};
+
+// Source : https://leetcode.com/problems/range-sum-query-mutable/
+
+class NumArray {
+public:
+    NumArray(vector<int> nums) {
+        data.resize(nums.size());
+        bit.resize(nums.size() + 1);
+        for (int i = 0; i < nums.size(); ++i) {
+            update(i, nums[i]);
+        }
+    }
+
+    void update(int i, int val) {
+        int diff = val - data[i];
+        for (int j = i + 1; j < bit.size(); j += (j&-j)) {
+            bit[j] += diff;
+        }
+        data[i] = val;
+    }
+
+    int sumRange(int i, int j) {
+        return getSum(j + 1) - getSum(i);
+    }    
+
+    int getSum(int i) {
+        int res = 0;
+        for (int j = i; j > 0; j -= (j&-j)) {
+            res += bit[j];
+        }
+        return res;
+    }
+
+private:
+    vector<int> data, bit;
+};
+
+// Source : https://leetcode.com/problems/range-sum-query-mutable/
+
+class NumArray
+{
+public:
+    NumArray(vector<int> nums)
+    {
+        n = powPos(nums.size());
+        tree.resize(n * 2);
+        buildTree(nums);
+    }
+
+    void buildTree(vector<int> &nums)
+    {
+        for (int i = n; i < n + nums.size(); ++i)
+        {
+            tree[i] = nums[i - n];
+        }
+        for (int i = n - 1; i > 0; --i)
+        {
+            tree[i] = tree[i * 2] + tree[i * 2 + 1];
+        }
+    }
+
+    void update(int i, int val)
+    {
+        tree[i += n] = val;
+        while (i > 1)
+        {
+            tree[i / 2] = tree[i] + tree[i ^ 1];
+            i /= 2;
+        }
+    }
+
+    int sumRange(int i, int j)
+    {
+        int sum = 0;
+        for (i += n, j += n; i <= j; i /= 2, j /= 2)
+        {
+            if ((i & 1) == 1) sum += tree[i++];
+            if ((j & 1) == 0) sum += tree[j--];
+        }
+        return sum;
+    }
+
+private:
+    uint32_t powPos(uint32_t a)
+    {
+        if(a <= 1)
+        {
+            return 1;
+        }
+        a--;
+        a |= (a >> 1);
+        a |= (a >> 2);
+        a |= (a >> 4);
+        a |= (a >> 8);
+        a |= (a >> 16);
+        return a + 1;
+    }
+    int n;
+    vector<int> tree;
+};
+
+// Source : https://leetcode.com/problems/range-sum-query-mutable/
+
+#include <iostream>
+#include <vector>
+#include <cassert>
+
+using namespace std;
+
+class SegmentTree{
+
+private:
+    vector<int> tree;
+    vector<int> nums;
+
+public:
+    SegmentTree(const vector<int>& nums){
+
+        if(nums.size() == 0)
+            return;
+
+        for(int num: nums)
+            (this->nums).push_back(num);
+
+        int size = 4*nums.size();
+        for(int i = 0 ; i < size ; i ++)
+            tree.push_back(-1);
+
+        treeBuild(0, 0, nums.size()-1);
+    }
+
+    void update(int index, int val){
+        assert(index >= 0 && index < nums.size());
+        nums[index] = val;
+        update(0, 0, nums.size()-1, index, val);
+    }
+
+    int query(int l, int r){
+        assert(l >= 0 && l < nums.size());
+        assert(r >= 0 && r < nums.size());
+        return query(0, 0, nums.size()-1, l, r);
+    }
+
+    void print(){
+        for(int e: tree)
+            cout << e << " ";
+        cout << endl;
+    }
+
+private:
+    void treeBuild(int treeID, int nodeLeftBound, int nodeRightBound){
+
+        assert(nodeLeftBound <= nodeRightBound);
+        if(nodeLeftBound == nodeRightBound){
+            tree[treeID] = nums[nodeLeftBound];
+            return;
+        }
+
+        int mid = (nodeLeftBound + nodeRightBound) / 2;
+        treeBuild(treeID * 2 + 1, nodeLeftBound, mid);
+        treeBuild(treeID * 2 + 2, mid + 1, nodeRightBound);
+
+        tree[treeID] = tree[treeID * 2 + 1] + tree[treeID * 2 + 2];
+    }
+
+    void update(int treeID, int nodeLeftBound, int nodeRightBound, int index, int val){
+
+        assert(nodeLeftBound <= nodeRightBound);
+        if(nodeLeftBound == nodeRightBound){
+            assert(index == nodeLeftBound);
+            tree[treeID] = val;
+            return;
+        }
+
+        int mid = (nodeLeftBound + nodeRightBound)/2;
+        if(index >= nodeLeftBound && index <= mid)
+            update(treeID * 2 + 1, nodeLeftBound, mid, index, val);
+        else
+            update(treeID * 2 + 2, mid+1, nodeRightBound, index, val);
+
+        tree[treeID] = tree[treeID * 2 + 1] + tree[treeID * 2 + 2];
+    }
+
+    int query(int treeID, int nodeLeftBound, int nodeRightBound, int l, int r){
+
+        if(l == nodeLeftBound && r == nodeRightBound)
+            return tree[treeID];
+
+        int mid = (nodeLeftBound + nodeRightBound) / 2;
+        if(r <= mid)
+            return query(treeID * 2 + 1, nodeLeftBound, mid, l, r);
+        if(l >= mid + 1)
+            return query(treeID * 2 + 2, mid + 1, nodeRightBound, l, r);
+
+        return query(treeID * 2 + 1, nodeLeftBound, mid, l, mid) +
+                query(treeID * 2 + 2, mid + 1, nodeRightBound, mid + 1, r);
+    }
+};
+
+class NumArray {
+
+private:
+    SegmentTree tree;
+
+public:
+    NumArray(vector<int> nums):tree(nums) {}
+
+    void update(int i, int val) {
+        tree.update(i, val);
+    }
+
+    int sumRange(int i, int j) {
+        return tree.query(i, j);
+    }
+};
+
+
+int main() {
+
+    vector<int> nums1 = {1, 3, 5};
+    NumArray obj1(nums1);
+
+    cout << obj1.sumRange(0, 2) << endl;
+    obj1.update(1, 2);
+    cout << obj1.sumRange(0, 2) << endl;
+
+    cout << endl;
+
+    // ---
+
+    vector<int> nums2 = {0, 9, 5, 7, 3};
+    NumArray obj2(nums2);
+
+    cout << obj2.sumRange(4, 4) << endl;
+    cout << obj2.sumRange(2, 4) << endl;
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/range-sum-query-2d-mutable/
+
+class NumMatrix {
+public:
+    NumMatrix(vector<vector<int>> &matrix) {
+        if (matrix.empty() || matrix[0].empty()) return;
+        mat.resize(matrix.size() + 1, vector<int>(matrix[0].size() + 1, 0));
+        bit.resize(matrix.size() + 1, vector<int>(matrix[0].size() + 1, 0));
+        for (int i = 0; i < matrix.size(); ++i) {
+            for (int j = 0; j < matrix[i].size(); ++j) {
+                update(i, j, matrix[i][j]);
+            }
+        }
+    }
+
+    void update(int row, int col, int val) {
+        int diff = val - mat[row + 1][col + 1];
+        for (int i = row + 1; i < mat.size(); i += i&-i) {
+            for (int j = col + 1; j < mat[i].size(); j += j&-j) {
+                bit[i][j] += diff;
+            }
+        }
+        mat[row + 1][col + 1] = val;
+    }
+
+    int sumRegion(int row1, int col1, int row2, int col2) {
+        return getSum(row2 + 1, col2 + 1) - getSum(row1, col2 + 1) - getSum(row2 + 1, col1) + getSum(row1, col1);
+    }
+    
+    int getSum(int row, int col) {
+        int res = 0;
+        for (int i = row; i > 0; i -= i&-i) {
+            for (int j = col; j > 0; j -= j&-j) {
+                res += bit[i][j];
+            }
+        }
+        return res;
+    } 
+    
+private:
+    vector<vector<int>> mat;
+    vector<vector<int>> bit;
+};
+
+// Source : https://leetcode.com/problems/best-time-to-buy-and-sell-stock-with-cooldown/description/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+
+private:
+    int n;
+
+public:
+    int maxProfit(vector<int>& prices) {
+
+        n = prices.size();
+        if(n <= 1) return 0;
+
+        vector<int> buy(n, INT_MIN), sell(n, INT_MIN);
+        return _sell(prices, n - 1, buy, sell);
+    }
+
+private:
+    int _sell(const vector<int>& prices, int index, vector<int>& buy, vector<int>& sell){
+
+        if(index == 0) return 0;
+        if(index == 1) return max(0, prices[1] - prices[0]);
+
+        if(sell[index] != INT_MIN) return sell[index];
+        return sell[index] = max(_sell(prices, index - 1, buy, sell),
+                                 _buy(prices, index - 1, buy, sell) + prices[index]);
+    }
+
+    int _buy(const vector<int>& prices, int index, vector<int>& buy, vector<int>& sell){
+
+        if(index == 0) return -prices[0];
+        if(index == 1) return max(-prices[0], -prices[1]);
+
+        if(buy[index] != INT_MIN) return buy[index];
+        return buy[index] = max(_buy(prices, index - 1, buy, sell),
+                                _sell(prices, index - 2, buy, sell) - prices[index]);
+    }
+};
+
+
+int main() {
+
+    vector<int> prices1 = {1, 2, 3, 0, 2};
+    cout << Solution().maxProfit(prices1) << endl;
+    // 3
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/minimum-height-trees/
+
+class Solution {
+public:
+    vector<int> findMinHeightTrees(int n, vector<vector<int>>& edges) {
+        if (n == 1) return {0};
+        vector<int> res;
+        vector<unordered_set<int>> adj(n);
+        queue<int> q;
+        for (const auto &edge : edges) {
+            adj[edge[0]].insert(edge[1]);
+            adj[edge[1]].insert(edge[0]);
+        }
+        for (int i = 0; i < n; ++i) {
+            if (adj[i].size() == 1) q.push(i);
+        }
+        while (n > 2) {
+            int size = q.size();
+            n -= size;
+            for (int i = 0; i < size; ++i) {
+                int t = q.front(); q.pop();
+                for (auto a : adj[t]) {
+                    adj[a].erase(t);
+                    if (adj[a].size() == 1) q.push(a);
+                }
+            }
+        }
+        while (!q.empty()) {
+            res.push_back(q.front()); q.pop();
+        }
+        return res;
+    }
+
+};
+
+// Source : https://leetcode.com/problems/sparse-matrix-multiplication/
+
+class Solution {
+public:
+    vector<vector<int>> multiply(vector<vector<int>>& A, vector<vector<int>>& B) {
+        vector<vector<int>> res(A.size(), vector<int>(B[0].size()));
+        for (int i = 0; i < A.size(); ++i) {
+            for (int k = 0; k < A[0].size(); ++k) {
+                if (A[i][k] != 0) {
+                    for (int j = 0; j < B[0].size(); ++j) {
+                        if (B[k][j] != 0) res[i][j] += A[i][k] * B[k][j];
+                    }
+                }
+            }
+        }
+        return res;
+    }
+};
+
+// Source : https://leetcode.com/problems/burst-balloons/
+
+class Solution {
+public:
+    int maxCoins(vector<int>& nums) {
+        int n = nums.size();
+        nums.insert(nums.begin(), 1);
+        nums.push_back(1);
+        vector<vector<int>> dp(n + 2, vector<int>(n + 2, 0));
+        for (int len = 1; len <= n; ++len) {
+            for (int i = 1; i <= n - len + 1; ++i) {
+                int j = i + len - 1;
+                for (int k = i; k <= j; ++k) {
+                    dp[i][j] = max(dp[i][j], nums[i - 1] * nums[k] * nums[j + 1] + dp[i][k - 1] + dp[k + 1][j]);
+                }
+            }
+        }
+        return dp[1][n];
+    }
+};
+
+// Source : https://leetcode.com/problems/super-ugly-number/
+
+class Solution {
+public:
+    int nthSuperUglyNumber(int n, vector<int>& primes) {
+        int ps=primes.size();
+        int answer[n], possible_current_answer[ps];
+        vector<int> t(ps,0);
+        answer[0]=1;
+        for (int k=1;k<n;k++) {
+            for (int i=0;i<ps;i++)
+                possible_current_answer[i]=answer[t[i]]*primes[i];
+            answer[k]=*min_element(possible_current_answer, possible_current_answer+ps);
+            for (int i=0;i<ps;i++) {
+                if (answer[k]==possible_current_answer[i])
+                    ++t[i];
+            }
+        }
+        return answer[n-1];
+    }
+
+};
+
+https://leetcode.com/problems/binary-tree-vertical-order-traversal/
+
+class Solution {
+public:
+    vector<vector<int>> verticalOrder(TreeNode* root) {
+        vector<vector<int>> res;
+        if (!root) return res;
+        map<int, vector<int>> m;
+        queue<pair<int, TreeNode*>> q;
+        q.push({0, root});
+        while (!q.empty()) {
+            auto a = q.front(); q.pop();
+            m[a.first].push_back(a.second->val);
+            if (a.second->left) q.push({a.first - 1, a.second->left});
+            if (a.second->right) q.push({a.first + 1, a.second->right});
+        }
+        for (const auto &a : m) {
+            res.push_back(a.second);
+        }
+        return res;
+    }
+
+};
+
+// Source : https://leetcode.com/problems/count-of-smaller-numbers-after-self/
+
+#include <iostream>
+#include <vector>
+#include <set>
+
+using namespace std;
+
+class Solution {
+public:
+    vector<int> countSmaller(vector<int>& nums) {
+
+        int n = nums.size();
+
+        vector<pair<int, int>> elements;
+        for(int i = 0; i < n; i ++)
+            elements.push_back(make_pair(nums[i], i));
+
+        vector<int> res(n, 0);
+        vector<pair<int, int>> aux(n);
+        merge_sort(elements, 0, n - 1, aux, res);
+        return res;
+    }
+
+private:
+    void merge_sort(vector<pair<int, int>>& arr, int l, int r,
+                    vector<pair<int, int>>& aux, vector<int>& res){
+
+        if(l >= r)
+            return;
+
+        int mid = (l + r) / 2;
+        merge_sort(arr, l, mid, aux, res);
+        merge_sort(arr, mid + 1, r, aux, res);
+        if(arr[mid] > arr[mid + 1])
+             merge(arr, l, mid, r, aux, res);
+    }
+
+    void merge(vector<pair<int, int>>& arr, int l, int mid, int r,
+               vector<pair<int, int>>& aux, vector<int>& res){
+
+        for(int i = l; i <= r; i ++)
+            aux[i] = arr[i];
+        int i = l, j = mid + 1;
+        for(int k = l; k <= r; k ++)
+            if(i > mid)
+                arr[k] = aux[j], j ++;
+            else if(j > r)
+                arr[k] = aux[i], res[aux[i].second] += j - mid - 1, i ++;
+            else if(aux[i] <= aux[j])
+                arr[k] = aux[i], res[aux[i].second] += j - mid - 1, i ++;
+            else
+                arr[k] = aux[j], j ++;
+    }
+};
+
+
+void print_vec(const vector<int>& vec){
+    for(int e: vec)
+        cout << e << " ";
+    cout << endl;
+}
+
+int main() {
+
+    vector<int> nums1 = {5, 2, 6, 1};
+    print_vec(Solution().countSmaller(nums1));
+    // 2 1 1 0
+
+    vector<int> nums2 = {2, 0, 1};
+    print_vec(Solution().countSmaller(nums2));
+    // 2 0 0
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/remove-duplicate-letters/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    string removeDuplicateLetters(string s) {
+
+        vector<int> left(26, 0), used(26, 0);
+        for(char c: s) left[c - 'a'] ++;
+
+        string res = "";
+        for(char c: s){
+            if(!used[c - 'a']){
+                while(res != "" && left[res.back() - 'a'] && c <= res.back()){
+                    used[res.back() - 'a'] = 0 ;
+                    res.pop_back();
+                }
+                res += c, used[c - 'a'] = 1;
+            }
+            left[c - 'a'] --;
+        }
+        return res;
+    }
+};
+
+
+int main() {
+
+    cout << Solution().removeDuplicateLetters("bcabc") << endl;
+    // abc
+
+    cout << Solution().removeDuplicateLetters("cbacdcbc") << endl;
+    // acdb
+
+    cout << Solution().removeDuplicateLetters("cdadabcc") << endl;
+    // adbc
+
+    cout << Solution().removeDuplicateLetters("ccacbaba") << endl;
+    // acb
+
+    cout << Solution().removeDuplicateLetters("abacb") << endl;
+    // abc
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/shortest-distance-from-all-buildings/
+
+class Solution {
+public:
+    int shortestDistance(vector<vector<int>>& grid) {
+        int res = INT_MAX, buildingCnt = 0, m = grid.size(), n = grid[0].size();
+        vector<vector<int>> dist(m, vector<int>(n, 0)), cnt = dist;
+        vector<vector<int>> dirs{{0,-1},{-1,0},{0,1},{1,0}};
+        for (int i = 0; i < m; ++i) {
+            for (int j = 0; j < n; ++j) {
+                if (grid[i][j] == 1) {
+                    ++buildingCnt;
+                    queue<pair<int, int>> q;
+                    q.push({i, j});
+                    vector<vector<bool>> visited(m, vector<bool>(n, false));
+                    int level = 1;
+                    while (!q.empty()) {
+                        int size = q.size();
+                        for (int s = 0; s < size; ++s) {
+                            int a = q.front().first, b = q.front().second; q.pop();
+                            for (int k = 0; k < dirs.size(); ++k) {
+                                int x = a + dirs[k][0], y = b + dirs[k][1];
+                                if (x >= 0 && x < m && y >= 0 && y < n && grid[x][y] == 0 && !visited[x][y]) {
+                                    dist[x][y] += level;
+                                    ++cnt[x][y];
+                                    visited[x][y] = true;
+                                    q.push({x, y});
+                                }
+                            }
+                        }
+                        ++level;
+                    }
+                }
+            }
+        }
+        for (int i = 0; i < m; ++i) {
+            for (int j = 0; j < n; ++j) {
+                if (grid[i][j] == 0 && cnt[i][j] == buildingCnt) {
+                    res = min(res, dist[i][j]);
+                }
+            }
+        }
+        return res == INT_MAX ? -1 : res;
+    }
+};
+
+// Source : https://leetcode.com/problems/maximum-product-of-word-lengths/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    int maxProduct(vector<string>& words) {
+
+        int n = words.size();
+        vector<int> bits(n, 0);
+        for(int i = 0; i < n; i ++)
+            for(char c: words[i])
+                bits[i] |= (1 << (c - 'a'));
+
+        int res = 0;
+        for(int i = 0; i < n; i ++)
+            for(int j = i + 1; j < n; j ++)
+                if((bits[i] & bits[j]) == 0)
+                    res = max(res, (int)words[i].size() * (int)words[j].size());
+        return res;
+    }
+};
+
+
+int main() {
+
+    vector<string> words1 = {"abcw","baz","foo","bar","xtfn","abcdef"};
+    cout << Solution().maxProduct(words1) << endl;
+    // 16
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/bulb-switcher/description/
+
+#include <iostream>
+#include <cmath>
+#include <cassert>
+
+using namespace std;
+
+class Solution {
+
+public:
+    int bulbSwitch(int n) {
+        assert(n >= 0);
+        return (int)sqrt(n);
+    }
+};
+
+int main() {
+
+    cout << Solution().bulbSwitch(2) << endl;
+    cout << Solution().bulbSwitch(3) << endl;
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/generalized-abbreviation/
+
+class Solution {
+public:
+    vector<string> generateAbbreviations(string word) {
+        vector<string> res;
+        int n = word.size();
+        for (int i = 0; i < pow(2, n); ++i) {
+            string out = "";
+            int cnt = 0;
+            for (int j = 0; j < n; ++j) {
+                if ((i >> (n - 1 -j)) & 1) ++cnt;
+                else {
+                    if (cnt > 0) {
+                        out += to_string(cnt);
+                        cnt = 0;
+                    }
+                    out += word[j];
+                }
+            }
+            if (cnt > 0) out += to_string(cnt);
+            res.push_back(out);
+        }
+        return res;
+    }
+};
+
+// Source : https://leetcode.com/problems/create-maximum-number/
+
+#include <iostream>
+#include <vector>
+#include <stack>
+
+using namespace std;
+
+class Solution {
+public:
+    vector<int> maxNumber(vector<int>& nums1, vector<int>& nums2, int k) {
+
+        string s1 = "", s2 = "";
+        for(int e: nums1) s1 += ('0' + e);
+        for(int e: nums2) s2 += ('0' + e);
+
+        string res(k, '0');
+        for(int i = 0; i <= k; i ++){
+            int sz1 = i, sz2 = k - i;
+            if(sz1 >= 0 && sz1 <= nums1.size() && sz2 >= 0 && sz2 <= nums2.size()){
+                string a = get(s1, sz1);
+                string b = get(s2, sz2);
+                assert(a.size() + b.size() == k);
+
+                string tres = merge(a, b);
+                assert(tres.size() == k);
+
+                if(tres > res) res = tres;
+            }
+        }
+
+        vector<int> ret;
+        for(char c: res) ret.push_back(c - '0');
+        return ret;
+    }
+
+private:
+    string merge(const string& s1, const string& s2){
+
+        int i = 0, j = 0;
+        string res;
+        while(i < s1.size() && j < s2.size()){
+            if(s1.substr(i) > s2.substr(j)) res += s1[i ++];
+            else res += s2[j ++];
+        }
+        if(j < s2.size()) res += s2.substr(j);
+        else if(i < s1.size()) res += s1.substr(i);
+        return res;
+    }
+
+    string get(const string& s, int sz){
+
+        int remove = (int)s.size() - sz;
+        assert(remove >= 0);
+
+        string stack = "";
+        for(char c: s){
+            while(stack != "" && remove && c > stack.back())
+                stack.pop_back(), remove --;
+            stack += c;
+        }
+        while(stack.size() != sz) stack.pop_back();
+        return stack;
+    }
+};
+
+
+void print_vec(const vector<int>& v){
+    for(int e: v) cout << e << " "; cout << endl;
+}
+
+int main() {
+
+    vector<int> numsa1 = {3, 4, 6, 5}, numsb1 = {9, 1, 2, 5, 8, 3};
+    print_vec(Solution().maxNumber(numsa1, numsb1, 5));
+    // 9 8 6 5 3
+
+    vector<int> numsa2 = {6, 7}, numsb2 = {6, 0, 4};
+    print_vec(Solution().maxNumber(numsa2, numsb2, 5));
+    // 6 7 6 0 4
+
+    vector<int> numsa3 = {3, 9}, numsb3 = {8, 9};
+    print_vec(Solution().maxNumber(numsa3, numsb3, 3));
+    // 9 8 9
+
+    vector<int> numsa4 = {1,6,5,4,7,3,9,5,3,7,8,4,1,1,4};
+    vector<int> numsb4 = {4,3,1,3,5,9};
+    print_vec(Solution().maxNumber(numsa4, numsb4, 21));
+    // 4,3,1,6,5,4,7,3,9,5,3,7,8,4,1,3,5,9,1,1,4
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/coin-change/solution/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    int coinChange(vector<int>& coins, int amount) {
+
+        vector<int> dp(amount + 1, amount + 1);
+        dp[0] = 0;
+
+        for(int i = 1 ; i <= amount ; i ++)
+            for(int coin: coins)
+                if(i - coin >= 0)
+                    dp[i] = min(dp[i], dp[i-coin] + 1);
+
+        return dp[amount] == amount + 1 ? -1 : dp[amount];
+    }
+};
+
+
+int main() {
+
+    vector<int> coins1 = {1, 2, 5};
+    int amount1 = 11;
+    cout<< Solution().coinChange(coins1, amount1) << endl;
+    // 3
+
+    // ---
+
+    vector<int> coins2 = {2};
+    int amount2 = 1;
+    cout << Solution().coinChange(coins2, amount2) << endl;
+    // -1
+
+    // ---
+
+    vector<int> coins3 = {2};
+    int amount3 = 3;
+    cout << Solution().coinChange(coins3, amount3) << endl;
+    // -1
+
+    // ---
+
+    vector<int> coins4 = {2, 5, 10, 1};
+    int amount4 = 27;
+    cout << Solution().coinChange(coins4, amount4) << endl;
+    // 4
+
+    // ---
+
+    vector<int> coins5 = {186, 419, 83, 408};
+    int amount5 = 6249;
+    cout << Solution().coinChange(coins5, amount5) << endl;
+    // 20
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/number-of-connected-components-in-an-undirected-graph/
+
+#include <iostream>
+#include <vector>
+#include <unordered_set>
+
+using namespace std;
+
+class Solution {
+public:
+    int countComponents(int n, vector<vector<int>>& edges) {
+
+        vector<vector<int>> g(n);
+        for(const vector<int>& e: edges)
+            g[e[0]].push_back(e[1]), g[e[1]].push_back(e[0]);
+
+        int res = 0;
+        vector<bool> visited(n, false);
+        for(int i = 0; i < n; i ++)
+            if(!visited[i]){
+                dfs(g, i, visited);
+                res ++;
+            }
+        return res;
+    }
+
+private:
+    void dfs(const vector<vector<int>>& g, int u, vector<bool>& visited){
+
+        visited[u] = true;
+        for(int v: g[u])
+            if(!visited[v]) dfs(g, v, visited);
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/wiggle-sort-ii/
+
+class Solution {
+public:
+    void wiggleSort(vector<int>& nums) {
+        vector<int> tmp = nums;
+        int n = nums.size(), k = (n + 1) / 2, j = n; 
+        sort(tmp.begin(), tmp.end());
+        for (int i = 0; i < n; ++i) {
+            nums[i] = i & 1 ? tmp[--j] : tmp[--k];
+        }
+    }
+};
+
+// Source : https://leetcode.com/problems/maximum-size-subarray-sum-equals-k/
+
+class Solution {
+public:
+    int maxSubArrayLen(vector<int>& nums, int k) {
+        int sum = 0, res = 0;
+        unordered_map<int, int> m;
+        for (int i = 0; i < nums.size(); ++i) {
+            sum += nums[i];
+            if (sum == k) res = i + 1;
+            else if (m.count(sum - k)) res = max(res, i - m[sum - k]);
+            if (!m.count(sum)) m[sum] = i;
+        }
+        return res;
+    }
+};
+
+// Source : https://leetcode.com/problems/power-of-three/
+
+class Solution {
+public:
+    bool isPowerOfThree(int n) {
+        return (n > 0 && 1162261467 % n == 0);
+    }
+};
+
+// Source : https://leetcode.com/problems/count-of-range-sum/
+
+class Solution {
+public:
+    int countRangeSum(vector<int>& nums, int lower, int upper) {
+        int n = nums.size();
+        if (n == 0)
+            return 0;
+        vector<long long> sums(n+1, 0);
+        for (int i=0; i<n; i++)
+            sums[i+1] = sums[i] + nums[i];
+        return mergeSortWhileCount(sums, 0, n+1, lower, upper);
+    }
+    
+    int mergeSortWhileCount(vector<long long>& sums, int start, int end, int lower, int upper)
+    {
+        if (end - start <= 1)
+            return 0;
+        int mid = (start + end) / 2;
+        int cnt = mergeSortWhileCount(sums, start, mid, lower, upper)
+        + mergeSortWhileCount(sums, mid, end, lower, upper);
+        int j = mid, k = mid, t = mid, len = 0;
+        vector<long long> cache(end-start, 0);
+        for (int i=start, s=0; i<mid; i++, s++) {
+            while (j < end && sums[j] - sums[i] < lower) j++;
+            while (k < end && sums[k] - sums[i] <= upper) k++;
+            while (t < end && sums[t] < sums[i]) cache[s++] = sums[t++];
+            cache[s] = sums[i];
+            len = s;
+            cnt += k - j;
+        }
+        for (int i=0; i<=len; i++)
+            sums[start+i] = cache[i];
+        return cnt;
+    }
+};
+
+// Source : https://leetcode.com/problems/odd-even-linked-list/description/
+
+#include <iostream>
+
+using namespace std;
+
+struct ListNode {
+    int val;
+    ListNode *next;
+    ListNode(int x) : val(x), next(NULL) {}
+};
+
+class Solution {
+public:
+    ListNode* oddEvenList(ListNode* head) {
+
+        if(head == NULL || head->next == NULL || head->next->next == NULL)
+            return head;
+
+        ListNode* dummyHead1 = new ListNode(-1);
+        ListNode* dummyHead2 = new ListNode(-1);
+        ListNode* p1 = dummyHead1;
+        ListNode* p2 = dummyHead2;
+        ListNode* p = head;
+        for(int i = 0; p; i ++)
+            if(i % 2 == 0){
+                p1->next = p;
+                p = p->next;
+                p1 = p1->next;
+                p1->next = NULL;
+            }
+            else{
+                p2->next = p;
+                p = p->next;
+                p2 = p2->next;
+                p2->next = NULL;
+            }
+
+        p1->next = dummyHead2->next;
+        ListNode* ret = dummyHead1->next;
+
+        delete dummyHead1;
+        delete dummyHead2;
+        return ret;
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/longest-increasing-path-in-a-matrix/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+
+private:
+    int R, C;
+    const int dirs[4][2] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
+
+public:
+    int longestIncreasingPath(vector<vector<int>>& matrix) {
+
+        R = matrix.size();
+        if(R == 0) return 0;
+
+        C = matrix[0].size();
+        if(C == 0) return 0;
+
+        vector<vector<int>> dp(R, vector<int>(C, -1));
+        int res = 1;
+        for(int i = 0; i < R; i ++)
+            for(int j = 0; j < C; j ++){
+                if(dp[i][j] == -1) dfs(matrix, i, j, dp);
+                res = max(res, dp[i][j]);
+            }
+        return res;
+    }
+
+private:
+    int dfs(const vector<vector<int>>& matrix, int x, int y, vector<vector<int>>& dp){
+
+        if(dp[x][y] != -1) return dp[x][y];
+
+        int res = 1;
+        for(int d = 0; d < 4; d ++){
+            int nextx = x + dirs[d][0], nexty = y + dirs[d][1];
+            if(in_area(nextx, nexty) && matrix[nextx][nexty] > matrix[x][y])
+                res = max(res, 1 + dfs(matrix, nextx, nexty, dp));
+        }
+        return dp[x][y] = res;
+    }
+
+    bool in_area(int x, int y){
+        return x >= 0 && x < R && y >= 0 && y < C;
+    }
+};
+
+
+int main() {
+
+    vector<vector<int>> matrix1 = {{9,9,4},{6,6,8},{2,1,1}};
+    cout << Solution().longestIncreasingPath(matrix1) << endl;
+    // 4
+
+    vector<vector<int>> matrix2 = {{3,4,5},{3,2,6},{2,2,1}};
+    cout << Solution().longestIncreasingPath(matrix2) << endl;
+    // 4
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/patching-array/
+
+class Solution {
+public:
+    int minPatches(vector<int>& nums, int n) {
+        long miss = 1, res = 0, i = 0;
+        while (miss <= n) {
+            if (i < nums.size() && nums[i] <= miss) {
+                miss += nums[i++];
+            } else {
+                miss += miss;
+                ++res;
+            }
+        }
+        return res;
+    }
+};
+
+
+// Source : https://leetcode.com/problems/verify-preorder-serialization-of-a-binary-tree/
+
+#include <iostream>
+#include <vector>
+#include <stack>
+
+using namespace std;
+
+class Solution {
+public:
+    bool isValidSerialization(string preorder) {
+
+        vector<int> data;
+        for(int start = 0, i = 1; i <= preorder.size(); i ++)
+            if(i == preorder.size() || preorder[i] == ','){
+                if(preorder[start] == '#')
+                    data.push_back(-1);
+                else
+                    data.push_back(atoi(preorder.substr(start, i - start).c_str()));
+
+                start = i + 1;
+                i = start;
+            }
+
+        if(data.size() == 1 && data[0] == -1) return true;
+
+        stack<pair<int, int>> stack;
+        for(int i = 0; i < data.size(); i ++){
+            int e = data[i];
+            if(e == -1){
+                if(stack.empty()) return false;
+                stack.top().second ++;
+
+                while(!stack.empty() && stack.top().second == 2)
+                    stack.pop();
+            }
+            else{
+                if(stack.empty()){
+                    if(i) return false;
+                }
+                else
+                    stack.top().second ++;
+                stack.push({e, 0});
+            }
+        }
+        return stack.empty();
+    }
+};
+
+
+int main() {
+
+    cout << Solution().isValidSerialization("9,3,4,#,#,1,#,#,2,#,6,#,#") << endl;
+    // true
+
+    cout << Solution().isValidSerialization("1,#") << endl;
+    // false
+
+    cout << Solution().isValidSerialization("9,#,#,1") << endl;
+    // false
+
+    cout << Solution().isValidSerialization("9,3,4,#,#,1,#,#,#,2,#,6,#,#") << endl;
+    // false
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/reconstruct-itinerary/
+
+class Solution {
+public:
+    vector<string> findItinerary(vector<vector<string>>& tickets) {
+        vector<string> res;
+        unordered_map<string, multiset<string>> m;
+        for (const auto &a : tickets) {
+            m[a[0]].insert(a[1]);
+        }
+        dfs(m, "JFK", res);
+        return vector<string> (res.rbegin(), res.rend());
+    }
+    void dfs(unordered_map<string, multiset<string>>& m, string s, vector<string>& res) {
+        while (m[s].size()) {
+            string t = *m[s].begin();
+            m[s].erase(m[s].begin());
+            dfs(m, t, res);
+        }
+        res.push_back(s);
+    }
+};
+
+// Source : https://leetcode.com/problems/largest-bst-subtree/
+
+class Solution {
+public:
+    int largestBSTSubtree(TreeNode* root) {
+        int res = 0, mn = INT_MIN, mx = INT_MAX;
+        isValidBST(root, mn, mx, res);
+        return res;
+    }
+    void isValidBST(TreeNode* root, int& mn, int& mx, int& res) {
+        if (!root) return;
+        int left_cnt = 0, right_cnt = 0;
+        int left_mn = INT_MIN, right_mn = INT_MIN;
+        int left_mx = INT_MAX, right_mx = INT_MAX;
+        isValidBST(root->left, left_mn, left_mx, left_cnt);
+        isValidBST(root->right, right_mn, right_mx, right_cnt);
+        if ((!root->left || root->val > left_mx) && (!root->right || root->val < right_mn)) {
+            res = left_cnt + right_cnt + 1;
+            mn = root->left ? left_mn : root->val;
+            mx = root->right ? right_mx : root->val;
+        } else {
+            res = max(left_cnt, right_cnt);    
+        }
+    }
+};
+
+// Source : https://leetcode.com/problems/increasing-triplet-subsequence/
+
+class Solution {
+public:
+    bool increasingTriplet(vector<int>& nums) {
+        int m1 = INT_MAX, m2 = INT_MAX;
+        for (auto a : nums) {
+            if (m1 >= a) m1 = a;
+            else if (m2 >= a) m2 = a;
+            else return true;
+        }
+        return false;
+    }
+};
+
+// Source : https://leetcode.com/problems/self-crossing/
+
+class Solution {
+public:
+    bool isSelfCrossing(vector<int>& x) {
+        for (int i = 3; i < x.size(); ++i) {
+            if (x[i] >= x[i - 2] && x[i - 3] >= x[i - 1]) {
+                return true;
+            }
+            if (i >= 4 && x[i-1] == x[i-3] && x[i] >= x[i-2] - x[i-4]) {
+                return true;
+            }
+            if (i >= 5 && x[i-2] >= x[i-4] && x[i-3] >= x[i-1] && x[i-1] >= x[i-3] - x[i-5] && x[i] >= x[i-2] - x[i-4]) {
+                return true;
+            }
+        }
+        return false;
+    }
+};
+
+// Source : https://leetcode.com/problems/palindrome-pairs/
+
+// bat和tab
+// tab tab
+// abcd和cba
+// dcba
+//   cba
+// dcb和abcd
+// dcb
+// dcba
+
+class Solution {
+public:
+    vector<vector<int>> palindromePairs(vector<string>& words) {
+        vector<vector<int>> res;
+        unordered_map<string, int> m;
+        set<int> s;
+        for (int i = 0; i < words.size(); ++i) {
+            m[words[i]] = i;
+            s.insert(words[i].size());
+        }
+        for (int i = 0; i < words.size(); ++i) {
+            string t = words[i];
+            int len = t.size();
+            reverse(t.begin(), t.end());
+            if (m.count(t) && m[t] != i) {
+                res.push_back({i, m[t]});
+            }
+            auto a = s.find(len);
+            for (auto it = s.begin(); it != a; ++it) {
+                int d = *it;
+                if (isValid(t, 0, len - d - 1) && m.count(t.substr(len - d))) {
+                    res.push_back({i, m[t.substr(len - d)]});
+                }
+                if (isValid(t, d, len - 1) && m.count(t.substr(0, d))) {
+                    res.push_back({m[t.substr(0, d)], i});
+                }
+            }
+        }
+        return res;
+    }
+    bool isValid(string t, int left, int right) {
+        while (left < right) {
+            if (t[left++] != t[right--]) return false;
+        }
+        return true;
+    }
+};
+
+// Source : https://leetcode.com/problems/house-robber-iii/
+
+class Solution {
+public:
+    int rob(TreeNode* root) {
+        unordered_map<TreeNode*, int> m;
+        return dfs(root, m);
+    }
+    int dfs(TreeNode *root, unordered_map<TreeNode*, int> &m) {
+        if (!root) return 0;
+        if (m.count(root)) return m[root];
+        int val = 0;
+        if (root->left) {
+            val += dfs(root->left->left, m) + dfs(root->left->right, m);
+        }
+        if (root->right) {
+            val += dfs(root->right->left, m) + dfs(root->right->right, m);
+        }
+        val = max(val + root->val, dfs(root->left, m) + dfs(root->right, m));
+        m[root] = val;
+        return val;
+    }
+};
+
+// Source : https://leetcode.com/problems/counting-bits/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    vector<int> countBits(int num) {
+
+        vector<int> dp(num + 1, 0);
+        for(int i = 1; i <= num; i ++)
+            dp[i] = 1 + dp[i - (i & (-i))];
+        return dp;
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/nested-list-weight-sum/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+// This is the interface that allows for creating nested lists.
+// You should not implement it, or speculate about its implementation
+class NestedInteger {
+    public:
+        // Constructor initializes an empty nested list.
+        NestedInteger();
+
+        // Constructor initializes a single integer.
+        NestedInteger(int value);
+
+        // Return true if this NestedInteger holds a single integer, rather than a nested list.
+        bool isInteger() const;
+
+        // Return the single integer that this NestedInteger holds, if it holds a single integer
+        // The result is undefined if this NestedInteger holds a nested list
+        int getInteger() const;
+
+        // Set this NestedInteger to hold a single integer.
+        void setInteger(int value);
+
+        // Set this NestedInteger to hold a nested list and adds a nested integer to it.
+        void add(const NestedInteger &ni);
+
+        // Return the nested list that this NestedInteger holds, if it holds a nested list
+        // The result is undefined if this NestedInteger holds a single integer
+        const vector<NestedInteger> &getList() const;
+};
+
+class Solution {
+public:
+    int depthSum(vector<NestedInteger>& nestedList) {
+
+        return depthSum(nestedList, 1);
+    }
+
+private:
+    int depthSum(const vector<NestedInteger>& nestedList, int d){
+
+        int res = 0;
+        for(const NestedInteger& e: nestedList)
+            if(e.isInteger()) res += d * e.getInteger();
+            else res += depthSum(e.getList(), d + 1);
+        return res;
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/longest-substring-with-at-most-k-distinct-characters/
+
+#include <iostream>
+#include <unordered_map>
+#include <cassert>
+
+using namespace std;
+
+class Solution {
+public:
+    int lengthOfLongestSubstringKDistinct(string s, int k) {
+
+        if(!k) return 0;
+
+        int l = 0, r = -1, res = 0;
+        unordered_map<char, int> freq;
+        while(r + 1 < s.size()){
+
+            while(r + 1 < s.size() && ok(freq, s[r + 1], k))
+                freq[s[r + 1]] ++, r ++;
+            // assert(freq.size() == k);
+            res = max(res, r - l + 1);
+
+            while(l <= r && freq.size() >= k){
+                freq[s[l]] --;
+                if(freq[s[l]] == 0) freq.erase(s[l]);
+                l ++;
+            }
+        }
+        return res;
+    }
+
+private:
+    bool ok(const unordered_map<char, int>& freq, char c, int k){
+
+        if(freq.size() <= k - 1) return true;
+
+        assert(freq.size() == k);
+        return freq.count(c);
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/flatten-nested-list-iterator/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+// This is the interface that allows for creating nested lists.
+// You should not implement it, or speculate about its implementation
+class NestedInteger {
+
+public:
+    // Return true if this NestedInteger holds a single integer, rather than a nested list.
+    bool isInteger() const{return true;}
+
+    // Return the single integer that this NestedInteger holds, if it holds a single integer
+    // The result is undefined if this NestedInteger holds a nested list
+    int getInteger() const{return -1;}
+
+    // Return the nested list that this NestedInteger holds, if it holds a nested list
+    // The result is undefined if this NestedInteger holds a single integer
+    const vector<NestedInteger> &getList() const{return {};}
+};
+
+class NestedIterator {
+
+private:
+    vector<int> data;
+    int i;
+
+public:
+    NestedIterator(vector<NestedInteger> &nestedList) {
+
+        dfs(nestedList);
+        i = 0;
+    }
+
+    int next() {
+
+        return data[i ++];
+    }
+
+    bool hasNext() {
+        return i < data.size();
+    }
+
+private:
+    void dfs(const vector<NestedInteger>& nestedList){
+
+        for(const NestedInteger& e: nestedList)
+            if(e.isInteger())
+                data.push_back(e.getInteger());
+            else
+                dfs(e.getList());
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+class NestedIterator {
+public:
+    NestedIterator(vector<NestedInteger> &nestedList) {
+        for (int i = nestedList.size() - 1; i >= 0; --i) {
+            s.push(nestedList[i]);
+        }
+    }
+
+    int next() {
+        NestedInteger t = s.top(); s.pop();
+        return t.getInteger();
+    }
+
+    bool hasNext() {
+        while (!s.empty()) {
+            NestedInteger t = s.top(); 
+            if (t.isInteger()) return true;
+            s.pop();
+            for (int i = t.getList().size() - 1; i >= 0; --i) {
+                s.push(t.getList()[i]);
+            }
+        }
+        return false;
+    }
+private:
+    stack<NestedInteger> s;
+};
+
+// Source : https://leetcode.com/problems/power-of-four/
+
+class Solution {
+public:
+    bool isPowerOfFour(int num) {
+        return num > 0 && !(num & (num - 1)) && (num & 0x55555555) == num;
+    }
+};
+
+// Source : https://leetcode.com/problems/integer-break/description/
+
+#include <iostream>
+#include <vector>
+#include <cassert>
+
+using namespace std;
+
+class Solution {
+private:
+    vector<int> memo;
+
+    int max3(int a, int b, int c){
+        return max(a, max(b, c));
+    }
+
+    int breakInteger(int n){
+
+        if(n == 1)
+            return 1;
+
+        if(memo[n] != -1)
+            return memo[n];
+
+        int res = -1;
+        for(int i = 1 ; i <= n - 1 ; i ++)
+            res = max3(res, i * (n - i) , i * breakInteger(n - i));
+        memo[n] = res;
+        return res;
+    }
+
+public:
+    int integerBreak(int n) {
+        assert(n >= 1);
+        memo.clear();
+        for(int i = 0 ; i < n + 1 ; i ++)
+            memo.push_back(-1);
+        return breakInteger(n);
+    }
+};
+
+
+int main() {
+
+    cout << Solution().integerBreak(2) << endl;
+    cout << Solution().integerBreak(10) << endl;
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/reverse-string/description/
+
+#include <iostream>
+
+using namespace std;
+
+class Solution {
+public:
+    void reverseString(vector<char>& s) {
+
+        int i = 0, j = s.size() - 1;
+        while(i < j){
+            swap(s[i], s[j]);
+            i ++;
+            j --;
+        }
+    }
+};
+
+
+int main() {
+
+    cout << Solution().reverseString("hello") << endl;
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/reverse-vowels-of-a-string/
+
+#include <iostream>
+#include <vector>
+#include <string>
+#include <cassert>
+#include <stdexcept>
+
+using namespace std;
+
+class Solution {
+public:
+    string reverseVowels(string s) {
+
+        int i = nextVowelIndex(s, 0);
+        int j = preVowelIndex(s, s.size() - 1);
+        while(i < j){
+            swap(s[i], s[j]);
+            i = nextVowelIndex(s, i + 1);
+            j = preVowelIndex(s, j - 1);
+        }
+
+        return s;
+    }
+
+private:
+    int nextVowelIndex(const string &s, int index){
+        for(int i = index ; i < s.size() ; i ++)
+            if(isVowel(s[i]))
+                return i;
+        return s.size();
+    }
+
+    int preVowelIndex(const string &s, int index ){
+        for(int i = index ; i >= 0 ; i --)
+            if(isVowel(s[i]))
+                return i;
+        return -1;
+    }
+
+    bool isVowel(char c){
+        char lowerc = tolower(c);
+        return lowerc == 'a' || lowerc == 'e' || lowerc == 'i' || lowerc == 'o' || lowerc == 'u';
+    }
+};
+
+
+int main() {
+
+    cout << Solution().reverseVowels("hello") << endl;
+    cout << Solution().reverseVowels("leetcode") << endl;
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/moving-average-from-data-stream/description/
+
+#include <iostream>
+#include <queue>
+
+using namespace std;
+
+class MovingAverage {
+
+private:
+    queue<int> q;
+    int sz, sum;
+
+public:
+    /** Initialize your data structure here. */
+    MovingAverage(int size) {
+        sz = size;
+        sum = 0;
+    }
+
+    double next(int val) {
+
+        if(q.size() == sz){
+            sum -= q.front();
+            q.pop();
+        }
+
+        sum += val;
+        q.push(val);
+
+        return (double)sum / q.size();
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/top-k-frequent-elements/description/
+
+class Solution {
+public:
+    vector<int> topKFrequent(vector<int>& nums, int k) {
+        unordered_map<int, int> m;
+        priority_queue<pair<int, int>> q;
+        vector<int> res;
+        for (auto a : nums) ++m[a];
+        for (auto it : m) q.push({it.second, it.first});
+        for (int i = 0; i < k; ++i) {
+            res.push_back(q.top().second); q.pop();
+        }
+        return res;
+    }
+};
+
+// Source : https://leetcode.com/problems/find-winner-on-a-tic-tac-toe-game/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class TicTacToe {
+
+private:
+    vector<vector<int>> board;
+    int n, winner;
+
+public:
+    /** Initialize your data structure here. */
+    TicTacToe(int n) : n(n), board(n, vector<int>(n, 0)), winner(0){
+    }
+
+    /** Player {player} makes a move at ({row}, {col}).
+        @param row The row of the board.
+        @param col The column of the board.
+        @param player The player, can be either 1 or 2.
+        @return The current winning condition, can be either:
+                0: No one wins.
+                1: Player 1 wins.
+                2: Player 2 wins. */
+    int move(int row, int col, int player) {
+
+        if(winner) return winner;
+
+        board[row][col] = player;
+
+        int j;
+        for(j = 0; j < n; j ++)
+            if(board[row][j] != player)
+                break;
+        if(j == n){winner = player; return player;}
+
+        int i;
+        for(i = 0; i < n; i ++)
+            if(board[i][col] != player)
+                break;
+        if(i == n){winner = player; return player;}
+
+        if(row == col){
+            for(i = 0, j = 0; i < n && j < n; i ++, j ++)
+                if(board[i][j] != player)
+                    break;
+            if(i == n){winner = player; return player;}
+        }
+
+        if(row + col == n - 1){
+            for(i = 0, j = n - 1; i < n && j >= 0; i ++, j --)
+                if(board[i][j] != player)
+                    break;
+            if(i == n){winner = player; return player;}
+        }
+
+        return 0;
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/intersection-of-two-arrays/description/
+
+#include <iostream>
+#include <vector>
+#include <unordered_set>
+
+using namespace std;
+
+class Solution {
+public:
+    vector<int> intersection(vector<int>& nums1, vector<int>& nums2) {
+
+        unordered_set<int> record(nums1.begin(), nums1.end());
+
+        unordered_set<int> resultSet;
+        for( int i = 0 ; i < nums2.size() ; i ++ )
+            if( record.find(nums2[i]) != record.end() )
+                resultSet.insert( nums2[i] );
+
+        return vector<int>(resultSet.begin(), resultSet.end());
+    }
+};
+
+
+void printVec(const vector<int>& vec){
+    for(int e: vec)
+        cout << e << " ";
+    cout << endl;
+}
+
+int main() {
+
+    int nums1[] = {1, 2, 2, 1};
+    vector<int> vec1(nums1, nums1 + sizeof(nums1)/sizeof(int));
+
+    int nums2[] = {2, 2};
+    vector<int> vec2(nums2, nums2 + sizeof(nums2)/sizeof(int));
+
+    printVec(Solution().intersection(vec1, vec2));
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/intersection-of-two-arrays-ii/description/
+
+#include <iostream>
+#include <vector>
+#include <unordered_map>
+using namespace std;
+
+class Solution {
+public:
+    vector<int> intersect(vector<int>& nums1, vector<int>& nums2) {
+
+        unordered_map<int, int> record;
+        for(int i = 0 ; i < nums1.size() ; i ++)
+            record[nums1[i]] += 1;
+
+        vector<int> resultVector;
+        for(int i = 0 ; i < nums2.size() ; i ++)
+            if(record[nums2[i]] > 0){
+                resultVector.push_back(nums2[i]);
+                record[nums2[i]] --;
+            }
+
+        return resultVector;
+    }
+};
+
+
+void print_vec(const vector<int>& vec){
+    for(int e: vec)
+        cout << e << " ";
+    cout << endl;
+}
+
+int main() {
+
+    vector<int> nums1 = {1, 2, 2, 1};
+    vector<int> nums2 = {2, 2};
+
+    print_vec(Solution().intersect(nums1, nums2));
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/android-unlock-patterns/
+
+class Solution {
+public:
+    int numberOfPatterns(int m, int n) {
+        int res = 0;
+        vector<bool> visited(10, false);
+        vector<vector<int>> jumps(10, vector<int>(10, 0));
+        jumps[1][3] = jumps[3][1] = 2;
+        jumps[4][6] = jumps[6][4] = 5;
+        jumps[7][9] = jumps[9][7] = 8;
+        jumps[1][7] = jumps[7][1] = 4;
+        jumps[2][8] = jumps[8][2] = 5;
+        jumps[3][9] = jumps[9][3] = 6;
+        jumps[1][9] = jumps[9][1] = jumps[3][7] = jumps[7][3] = 5;
+        res += helper(1, 1, m, n, jumps, visited, 0) * 4;
+        res += helper(2, 1, m, n, jumps, visited, 0) * 4;
+        res += helper(5, 1, m, n, jumps, visited, 0);
+        return res;
+    }
+    int helper(int num, int len, int m, int n, vector<vector<int>>& jumps, vector<bool>& visited, int res) {
+        if (len >= m) ++res;
+        ++len;
+        if (len > n) return res;
+        visited[num] = true;
+        for (int next = 1; next <= 9; ++next) {
+            int jump = jumps[num][next];
+            if (!visited[next] && (jump == 0 || visited[jump])) {
+                res = helper(next, len, m, n, jumps, visited, res);
+            }
+        }
+        visited[num] = false;
+        return res;
+    }
+};
+
+// Source : https://leetcode.com/problems/data-stream-as-disjoint-intervals/
+
+class SummaryRanges {
+public:
+    SummaryRanges() {}
+    
+    void addNum(int val) {
+        vector<int> newInterval{val, val};
+        int i = 0, overlap = 0, n = intervals.size();
+        for (; i < n; ++i) {
+            if (newInterval[1] + 1 < intervals[i][0]) break; 
+            if (newInterval[0] <= intervals[i][1] + 1) {
+                newInterval[0] = min(newInterval[0], intervals[i][0]);
+                newInterval[1] = max(newInterval[1], intervals[i][1]);
+                ++overlap;
+            }
+        }
+        if (overlap > 0) {
+            intervals.erase(intervals.begin() + i - overlap, intervals.begin() + i);
+        }
+        intervals.insert(intervals.begin() + i - overlap, newInterval);
+    }
+    vector<vector<int>> getIntervals() {
+        return intervals;
+    }
+private:
+    vector<vector<int>> intervals;
+};
+
+// Source : https://leetcode.com/problems/design-snake-game/
+
+class SnakeGame {
+public:
+    /** Initialize your data structure here.
+        @param width - screen width
+        @param height - screen height 
+        @param food - A list of food positions
+        E.g food = [[1,1], [1,0]] means the first food is positioned at [1,1], the second is at [1,0]. */
+    SnakeGame(int width, int height, vector<pair<int, int>> food) {
+        this->width = width;
+        this->height = height;
+        this->food = food;
+        score = 0;
+        snake.push_back({0, 0});
+    }
+    
+    /** Moves the snake.
+        @param direction - 'U' = Up, 'L' = Left, 'R' = Right, 'D' = Down 
+        @return The game's score after the move. Return -1 if game over. 
+        Game over when snake crosses the screen boundary or bites its body. */
+    int move(string direction) {
+        auto head = snake.front(), tail = snake.back();
+        snake.pop_back();
+        if (direction == "U") --head.first;
+        else if (direction == "L") --head.second;
+        else if (direction == "R") ++head.second;
+        else if (direction == "D") ++head.first;
+        if (count(snake.begin(), snake.end(), head) || head.first < 0 || head.first >= height || head.second < 0 || head.second >= width) {
+            return -1;
+        }
+        snake.insert(snake.begin(), head);
+        if (!food.empty() && head == food.front()) {
+            food.erase(food.begin());
+            snake.push_back(tail);
+            ++score;
+        }
+        return score;
+    }
+
+private:
+    int width, height, score;
+    vector<pair<int, int>> food, snake;
+};
+
+// Source : https://leetcode.com/problems/russian-doll-envelopes/
+
+class Solution {
+public:
+    int maxEnvelopes(vector<vector<int>>& envelopes) {
+        vector<int> dp;
+        sort(envelopes.begin(), envelopes.end(), [](const vector<int> &a, const vector<int> &b){
+            if (a[0] == b[0]) return a[1] > b[1];
+            return a[0] < b[0];
+        });
+        for (int i = 0; i < envelopes.size(); ++i) {
+            auto it = lower_bound(dp.begin(), dp.end(), envelopes[i][1]);
+            if (it == dp.end()) dp.push_back(envelopes[i][1]);
+            else *it = envelopes[i][1];
+        }
+        return dp.size();
+    }
+};
+
+// Source : https://leetcode.com/problems/design-twitter/
+
+class Twitter {
+public:
+    Twitter() {
+        time = 0;
+    }
+    
+    void postTweet(int userId, int tweetId) {
+        follow(userId, userId);
+        tweets[userId].insert({time++, tweetId});
+    }
+    
+    vector<int> getNewsFeed(int userId) {
+        vector<int> res;
+        map<int, int> top10;
+        for (auto id : friends[userId]) {
+            for (auto a : tweets[id]) {
+                top10.insert({a.first, a.second});
+                if (top10.size() > 10) top10.erase(top10.begin());
+            }
+        }
+        for (auto a : top10) {
+            res.insert(res.begin(), a.second);
+        }
+        return res;
+    }
+    
+    void follow(int followerId, int followeeId) {
+        friends[followerId].insert(followeeId);
+    }
+    
+    void unfollow(int followerId, int followeeId) {
+        if (followerId != followeeId) {
+            friends[followerId].erase(followeeId);
+        }
+    }
+    
+private:
+    int time;
+    unordered_map<int, unordered_set<int>> friends;
+    unordered_map<int, map<int, int>> tweets;
+};
+
+// Source : https://leetcode.com/problems/line-reflection/
+
+class Solution {
+public:
+    bool isReflected(vector<pair<int, int>>& points) {
+        unordered_map<int, set<int>> m;
+        int mx = INT_MIN, mn = INT_MAX;
+        for (auto a : points) {
+            mx = max(mx, a.first);
+            mn = min(mn, a.first);
+            m[a.first].insert(a.second);
+        }
+        double y = (double)(mx + mn) / 2;
+        for (auto a : points) {
+            int t = 2 * y - a.first;
+            if (!m.count(t) || !m[t].count(a.second)) {
+                return false;
+            }
+        }
+        return true;
+    }
+};
+
+// Source : https://leetcode.com/problems/count-numbers-with-unique-digits/
+
+class Solution {
+public:
+    int countNumbersWithUniqueDigits(int n) {
+        if (n == 0) return 1;
+        int res = 0;
+        for (int i = 1; i <= n; ++i) {
+            res += count(i);
+        }
+        return res;
+    }
+    int count(int k) {
+        if (k < 1) return 0;
+        if (k == 1) return 10;
+        int res = 1;
+        for (int i = 9; i >= (11 - k); --i) {
+            res *= i;
+        }
+        return res * 9;
+    }
+};
+
+// Source : https://leetcode.com/problems/rearrange-string-k-distance-apart/
+
+class Solution {
+public:
+    string rearrangeString(string str, int k) {
+        if (k == 0) return str;
+        string res;
+        int len = (int)str.size();
+        unordered_map<char, int> m;
+        priority_queue<pair<int, char>> q;
+        for (auto a : str) ++m[a];
+        for (auto it = m.begin(); it != m.end(); ++it) {
+            q.push({it->second, it->first});
+        }
+        while (!q.empty()) {
+            vector<pair<int, int>> v;
+            int cnt = min(k, len);
+            for (int i = 0; i < cnt; ++i) {
+                if (q.empty()) return "";
+                auto t = q.top(); q.pop();
+                res.push_back(t.second);
+                if (--t.first > 0) v.push_back(t);
+                --len;
+            }
+            for (auto a : v) q.push(a);
+        }
+        return res;
+    }
+};
+
+// Source : https://leetcode.com/problems/logger-rate-limiter/
+
+class Logger {
+public:
+    Logger() {}
+    
+    bool shouldPrintMessage(int timestamp, string message) {
+        if (!m.count(message)) {
+            m[message] = timestamp;
+            return true;
+        } 
+        if (timestamp - m[message] >= 10) {
+            m[message] = timestamp;
+            return true;
+        }
+        return false;
+    }
+
+private:
+    unordered_map<string, int> m;
+};
+
+// Source : https://leetcode.com/problems/sort-transformed-array/
+
+class Solution {
+public:
+    vector<int> sortTransformedArray(vector<int>& nums, int a, int b, int c) {
+        int n = nums.size(), i = 0, j = n - 1;
+        vector<int> res(n);
+        int idx = a >= 0 ? n - 1 : 0;
+        while (i <= j) {
+            if (a >= 0) {
+                res[idx--] = cal(nums[i], a, b, c) >= cal(nums[j], a, b, c) ? cal(nums[i++], a, b, c) : cal(nums[j--], a, b, c);
+            } else {
+                res[idx++] = cal(nums[i], a, b, c) >= cal(nums[j], a, b, c) ? cal(nums[j--], a, b, c) : cal(nums[i++], a, b, c);
+            }
+        }
+        return res;
+    }
+    int cal(int x, int a, int b, int c) {
+        return a * x * x + b * x + c;
+    }
+};
+
+// Source : https://leetcode.com/problems/bomb-enemy/
+
+class Solution {
+public:
+    int maxKilledEnemies(vector<vector<char>>& grid) {
+        if (grid.empty() || grid[0].empty()) return 0;
+        int m = grid.size(), n = grid[0].size(), res = 0;
+        vector<vector<int>> v1(m, vector<int>(n, 0)), v2 = v1, v3 = v1, v4 = v1;
+        for (int i = 0; i < m; ++i) {
+            for (int j = 0; j < n; ++j) {
+                int t = (j == 0 || grid[i][j] == 'W') ? 0 : v1[i][j - 1];
+                v1[i][j] = grid[i][j] == 'E' ? t + 1 : t;
+            }
+            for (int j = n - 1; j >= 0; --j) {
+                int t = (j == n - 1 || grid[i][j] == 'W') ? 0 : v2[i][j + 1];
+                v2[i][j] = grid[i][j] == 'E' ? t + 1 : t;
+            }
+        }
+        for (int j = 0; j < n; ++j) {
+            for (int i = 0; i < m; ++i) {
+                int t = (i == 0 || grid[i][j] == 'W') ? 0 : v3[i - 1][j];
+                v3[i][j] = grid[i][j] == 'E' ? t + 1 : t;
+            }
+            for (int i = m - 1; i >= 0; --i) {
+                int t = (i == m - 1 || grid[i][j] == 'W') ? 0 : v4[i + 1][j];
+                v4[i][j] = grid[i][j] == 'E' ? t + 1 : t;
+            }
+        }
+        for (int i = 0; i < m; ++i) {
+            for (int j = 0; j < n; ++j) {
+                if (grid[i][j] == '0') {
+                    res = max(res, v1[i][j] + v2[i][j] + v3[i][j] + v4[i][j]);
+                }
+            }
+        }
+        return res;
+    }
+};
+
+// Source : https://leetcode.com/problems/design-hit-counter/
+
+class HitCounter {
+public:
+    /** Initialize your data structure here. */
+    HitCounter() {}
+    
+    /** Record a hit.
+        @param timestamp - The current timestamp (in seconds granularity). */
+    void hit(int timestamp) {
+        q.push(timestamp);
+    }
+    
+    /** Return the number of hits in the past 5 minutes.
+        @param timestamp - The current timestamp (in seconds granularity). */
+    int getHits(int timestamp) {
+        while (!q.empty() && timestamp - q.front() >= 300) {
+            q.pop();
+        }
+        return q.size();
+    }
+
+private:
+    queue<int> q;
+};
+
+// Source : https://leetcode.com/problems/max-sum-of-rectangle-no-larger-than-k/
+
+class Solution {
+public:
+    int maxSumSubmatrix(vector<vector<int>>& matrix, int k) {
+        if (matrix.empty() || matrix[0].empty()) return 0;
+        int m = matrix.size(), n = matrix[0].size(), res = INT_MIN;
+        int sum[m][n];
+        for (int i = 0; i < m; ++i) {
+            for (int j = 0; j < n; ++j) {
+                int t = matrix[i][j];
+                if (i > 0) t += sum[i - 1][j];
+                if (j > 0) t += sum[i][j - 1];
+                if (i > 0 && j > 0) t -= sum[i - 1][j - 1];
+                sum[i][j] = t;
+                for (int r = 0; r <= i; ++r) {
+                    for (int c = 0; c <= j; ++c) {
+                        int d = sum[i][j];
+                        if (r > 0) d -= sum[r - 1][j];
+                        if (c > 0) d -= sum[i][c - 1];
+                        if (r > 0 && c > 0) d += sum[r - 1][c - 1];
+                        if (d <= k) res = max(res, d);
+                    }
+                }
+            }
+        }
+        return res;
+    }
+};
+
+// Source : https://leetcode.com/problems/nested-list-weight-sum-ii/
+
+class Solution {
+public:
+    int depthSumInverse(vector<NestedInteger>& nestedList) {
+        int unweighted = 0, weighted = 0;
+        while (!nestedList.empty()) {
+            vector<NestedInteger> nextLevel;
+            for (auto a : nestedList) {
+                if (a.isInteger()) {
+                    unweighted += a.getInteger();
+                } else {
+                    nextLevel.insert(nextLevel.end(), a.getList().begin(), a.getList().end());
+                }
+            }
+            weighted += unweighted;
+            nestedList = nextLevel;
+        }
+        return weighted;
+    }
+};
+
+// Source : https://leetcode.com/problems/water-and-jug-problem/
+
+// z = m * x + n * y
+// m，n为舀水和倒水的次数，正数表示往里舀水，负数表示往外倒水
+// 根据裴蜀定理，z = m * x + n * y有解的条件为z是x和y的最大公约数的倍数，还有个限制条件x + y >= z，因为x和y不可能称出比它们之和还多的水
+
+class Solution {
+public:
+    bool canMeasureWater(int x, int y, int z) {
+        return z == 0 || (x + y >= z && z % gcd(x, y) == 0);
+    }
+    int gcd(int x, int y) {
+        return y == 0 ? x : gcd(y, x % y);
+    }
+};
+
+// Source : https://leetcode.com/problems/find-leaves-of-binary-tree/
+
+#include <iostream>
+#include <vector>
+#include <unordered_map>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode *left;
+    TreeNode *right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+};
+
+class Solution {
+public:
+    vector<vector<int>> findLeaves(TreeNode* root) {
+
+        unordered_map<TreeNode*, int> level;
+        level[nullptr] = 0;
+        dfs(root, level);
+
+        vector<vector<int>> res(level[root] + 1);
+        for(const pair<TreeNode*, int>& p: level)
+            if(p.first) res[p.second].push_back(p.first->val);
+        return res;
+    }
+
+private:
+    void dfs(TreeNode* node, unordered_map<TreeNode*, int>& level){
+
+        if(!node) return;
+
+        if(!node->left && !node->right){
+            level[node] = 0;
+            return;
+        }
+
+        dfs(node->left, level);
+        dfs(node->right, level);
+        level[node] = max(level[node->left], level[node->right]) + 1;
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/valid-perfect-square/
+
+class Solution {
+public:
+    bool isPerfectSquare(int num) {
+        for (int i = 1; i <= num / i; ++i) {
+            if (i * i == num) return true;
+        }
+        return false;
+    }
+};
+
+// Source : https://leetcode.com/problems/largest-divisible-subset/
+
+#include <iostream>
+#include <vector>
+#include <unordered_set>
+
+using namespace std;
+
+class Solution {
+public:
+    vector<int> largestDivisibleSubset(vector<int>& nums) {
+
+        sort(nums.begin(), nums.end());
+
+        vector<int> dp(nums.size(), 1), pre(nums.size(), -1);
+        for(int i = 1; i < nums.size(); i ++)
+            for(int j = i - 1; j >= 0; j --)
+                if(nums[i] % nums[j] == 0 && 1 + dp[j] > dp[i])
+                    dp[i] = 1 + dp[j], pre[i] = j;
+
+        int cur = max_element(dp.begin(), dp.end()) - dp.begin();
+        vector<int> res;
+        while(cur != -1){
+            res.push_back(nums[cur]);
+            cur = pre[cur];
+        }
+        return res;
+    }
+};
+
+
+void print_vec(const vector<int>& v){
+    for(int e: v) cout << e << " "; cout << endl;
+}
+
+int main() {
+
+    vector<int> nums1 = {1, 2, 3};
+    print_vec(Solution().largestDivisibleSubset(nums1));
+    // 1 2
+
+    vector<int> nums2 = {3, 4, 16, 8};
+    print_vec(Solution().largestDivisibleSubset(nums2));
+    // 4 8 16
+
+    vector<int> nums3 = {2000000000};
+    print_vec(Solution().largestDivisibleSubset(nums3));
+    // 2000000000
+
+    vector<int> nums4 = {1, 2, 3};
+    print_vec(Solution().largestDivisibleSubset(nums4));
+    // 1 2
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/plus-one-linked-list/
+
+#include <iostream>
+
+struct ListNode {
+    int val;
+    ListNode *next;
+    ListNode() : val(0), next(nullptr) {}
+    ListNode(int x) : val(x), next(nullptr) {}
+    ListNode(int x, ListNode *next) : val(x), next(next) {}
+};
+
+class Solution {
+public:
+    ListNode* plusOne(ListNode* head) {
+
+        if(!head) return head;
+
+        head = reverse(head);
+        head->val += 1;
+        ListNode* cur = head;
+        while(cur){
+            if(cur->val < 10) break;
+            cur->val = 0;
+            if(!cur->next) cur->next = new ListNode(1);
+            else cur->next->val += 1;
+
+            cur = cur->next;
+        }
+        return reverse(head);
+    }
+
+private:
+    ListNode* reverse(ListNode* node){
+
+        if(!node->next) return node;
+
+        ListNode* ret = reverse(node->next);
+        node->next->next = node;
+        node->next = nullptr;
+        return ret;
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/range-addition/
+
+class Solution {
+public:
+    vector<int> getModifiedArray(int length, vector<vector<int>>& updates) {
+        vector<int> res(length + 1);
+        for (const auto &a : updates) {
+            res[a[0]] += a[2];
+            res[a[1] + 1] -= a[2];
+        }
+        for (int i = 1; i < res.size(); ++i) {
+            res[i] += res[i - 1];
+        }
+        res.pop_back();
+        return res;
+    }
+}
+
+#include <iostream>
+#include <vector>
+#include <cassert>
+
+using namespace std;
+
+class SegmentTree{
+
+private:
+    vector<int> tree;
+    vector<int> lazy;
+    int n;
+
+public:
+    SegmentTree(int n){
+        this->n = n;
+        int size = 4*n;
+        for(int i = 0 ; i < size ; i ++){
+            tree.push_back(0);
+            lazy.push_back(0);
+        }
+    }
+
+    void update(int l, int r, int inc){
+        update(0, 0, n-1, l, r, inc);
+    }
+
+    int query(int index){
+        return query(0, 0, n-1, index);
+    }
+
+private:
+    void update(int treeID, int treeL, int treeR, int l, int r, int inc){
+
+        if(lazy[treeID]){
+            tree[treeID] += (treeR - treeL + 1) * lazy[treeID];
+            if(treeL != treeR){
+                lazy[2 * treeID + 1] += lazy[treeID];
+                lazy[2 * treeID + 2] += lazy[treeID];
+            }
+            lazy[treeID] = 0;
+        }
+
+        if(treeL == l && treeR == r){
+            tree[treeID] += (treeR - treeL + 1) * inc;
+            if(treeL != treeR){
+                lazy[2 * treeID + 1] += inc;
+                lazy[2 * treeID + 2] += inc;
+            }
+            return;
+        }
+
+        int mid = (treeL + treeR) / 2;
+
+        if(r <= mid)
+            update(treeID * 2 + 1, treeL, mid, l, r, inc);
+        else if(l >= mid + 1)
+            update(treeID * 2 + 2, mid + 1, treeR, l, r, inc);
+        else{
+            update(treeID * 2 + 1, treeL, mid, l, mid, inc);
+            update(treeID * 2 + 2, mid + 1, treeR, mid + 1, r, inc);
+        }
+
+        return;
+    }
+
+    int query(int treeID, int treeL, int treeR, int index){
+
+        if(lazy[treeID]){
+            tree[treeID] += (treeR - treeL + 1) * lazy[treeID];
+            if(treeL != treeR){
+                lazy[2 * treeID + 1] += lazy[treeID];
+                lazy[2 * treeID + 2] += lazy[treeID];
+            }
+            lazy[treeID] = 0;
+        }
+
+        if( treeL == treeR && treeL == index)
+            return tree[treeID];
+
+        int mid = (treeL + treeR) / 2;
+
+        if(index <= mid)
+            return query(treeID * 2 + 1, treeL, mid, index);
+
+        assert(index >= mid + 1);
+        return query (treeID * 2 + 2, mid + 1, treeR, index);
+    }
+};
+
+class Solution {
+
+public:
+    vector<int> getModifiedArray(int length, vector<vector<int>>& updates) {
+
+        SegmentTree stree(length);
+        for(const auto &update: updates)
+            stree.update(update[0], update[1], update[2]);
+
+        vector<int> res;
+        for(int i = 0 ; i < length ; i ++)
+            res.push_back(stree.query(i));
+
+        return res;
+    }
+};
+
+int main() {
+
+    int length = 5;
+    int updates[5][3] = {
+            {1, 3, 2},
+            {2, 4, 3},
+            {0, 2, -2}
+    };
+    vector<vector<int>> vec;
+    for(int i = 0 ; i < length ; i ++)
+        vec.push_back(vector<int>(updates[i], updates[i] + sizeof(updates[i])/sizeof(int)));
+
+    vector<int> res = Solution().getModifiedArray(length, vec);
+    for(int e: res)
+        cout << e << " ";
+    cout << endl;
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/sum-of-two-integers/
+
+class Solution {
+public:
+    int getSum(int a, int b) {
+        if (b == 0) return a;
+        int sum = a ^ b;
+        int carry = (a & b & 0x7fffffff) << 1;
+        return getSum(sum, carry);
+    }
+};
+
+// Source : https://leetcode.com/problems/super-pow/
+
+class Solution {
+public:
+    int superPow(int a, vector<int>& b) {
+        long long res = 1;
+        for (int i = 0; i < b.size(); ++i) {
+            res = pow(res, 10) * pow(a, b[i]) % 1337;
+        }
+        return res;
+    }
+    int pow(int x, int n) {
+        if (n == 0) return 1;
+        if (n == 1) return x % 1337;
+        return pow(x % 1337, n / 2) * pow(x % 1337, n - n / 2) % 1337;
+    }
+};
+
+// Source : https://leetcode.com/problems/find-k-pairs-with-smallest-sums/
+
+class Solution {
+public:
+    vector<vector<int>> kSmallestPairs(vector<int>& nums1, vector<int>& nums2, int k) {
+        vector<vector<int>> res;
+        priority_queue<vector<int>, vector<vector<int>>, cmp> q;
+        for (int i = 0; i < min((int)nums1.size(), k); ++i) {
+            for (int j = 0; j < min((int)nums2.size(), k); ++j) {
+                if (q.size() < k) {
+                    q.push( vector<int>( {nums1[i], nums2[j]} ) );
+                } else if (nums1[i] + nums2[j] < q.top()[0] + q.top()[1]) {
+                    q.push( vector<int>( {nums1[i], nums2[j]} ) ); q.pop();
+                }
+            }
+        }
+        while (!q.empty()) {
+            res.push_back(q.top()); q.pop();
+        }
+        return res;
+    }
+
+    struct cmp {
+        bool operator() (const vector<int> &a, const vector<int> &b) {
+            return a[0] + a[1] < b[0] + b[1];
+        }
+    };
+
+};
+
+// Source : https://leetcode.com/problems/guess-number-higher-or-lower/description/
+
+#include <iostream>
+#include <cassert>
+
+using namespace std;
+
+// Forward declaration of guess API.
+// @param num, your guess
+// @return -1 if my number is lower, 1 if my number is higher, otherwise return 0
+int guess(int num);
+
+class Solution {
+public:
+    int guessNumber(int n) {
+
+        int l = 1, r = n;
+        while(l <= r){
+            int mid = l + (r - l) / 2;
+            int ret = guess(mid);
+            if(ret == 0)
+                return mid;
+            else if(ret < 0)
+                r = mid - 1;
+            else
+                l = mid + 1;
+        }
+
+        assert(false);
+    }
+};
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/guess-number-higher-or-lower-ii/
+
+class Solution {
+public:
+    int getMoneyAmount(int n) {
+        vector<vector<int>> memo(n + 1, vector<int>(n + 1, 0));
+        return helper(1, n, memo);
+    }
+    int helper(int start, int end, vector<vector<int>>& memo) {
+        if (start >= end) return 0;
+        if (memo[start][end] > 0) return memo[start][end];
+        int res = INT_MAX;
+        for (int k = start; k <= end; ++k) {
+            int t = k + max(helper(start, k - 1, memo), helper(k + 1, end, memo));
+            res = min(res, t);
+        }
+        return memo[start][end] = res;
+    }
+};
+
+// Source : https://leetcode.com/problems/wiggle-subsequence/
+
+class Solution {
+public:
+    int wiggleMaxLength(vector<int>& nums) {
+        int p = 1, q = 1, n = nums.size();
+        for (int i = 1; i < n; ++i) {
+            if (nums[i] > nums[i - 1]) p = q + 1;
+            else if (nums[i] < nums[i - 1]) q = p + 1;
+        }
+        return min(n, max(p, q));
+    }
+};
+
+// Source : https://leetcode.com/problems/combination-sum-iv/description/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+
+private:
+    vector<int> memo;
+
+public:
+    int combinationSum4(vector<int>& nums, int target) {
+
+        if(nums.size() == 0)
+            return 0;
+
+        memo = vector<int>(target + 1, -1);
+        solve(nums, target);
+
+        return memo[target];
+    }
+
+private:
+    int solve(const vector<int>& nums, int target){
+
+        if(target == 0)
+            return 1;
+
+        if(memo[target] != -1)
+            return memo[target];
+
+        int res = 0;
+        for(int i = 0; i < nums.size() ; i ++)
+            if(target >= nums[i])
+                res += solve(nums, target - nums[i]);
+
+        return memo[target] = res;
+    }
+};
+
+
+int main() {
+
+    vector<int> nums1 = {1, 2, 3};
+    int target1 = 4;
+    cout << Solution().combinationSum4(nums1, target1) << endl;
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/kth-smallest-element-in-a-sorted-matrix/
+
+class Solution {
+public:
+    int kthSmallest(vector<vector<int>>& matrix, int k) {
+        priority_queue<int> q;
+        for (int i = 0; i < matrix.size(); ++i) {
+            for (int j = 0; j < matrix[i].size(); ++j) {
+                q.emplace(matrix[i][j]);
+                if (q.size() > k) q.pop();
+            }
+        }
+        return q.top();
+    }
+};
+
+https://leetcode.com/problems/design-phone-directory/
+
+class PhoneDirectory {
+public:
+    PhoneDirectory(int maxNumbers) {
+        mx = maxNumbers;
+        for (int i = 0; i < maxNumbers; ++i) q.push(i);
+    }
+    int get() {
+        if (q.empty()) return -1;
+        int num = q.front(); q.pop();
+        used.insert(num);
+        return num;
+    }
+    bool check(int number) {
+        return !used.count(number);
+    }
+    void release(int number) {
+        if (!used.count(number)) return;
+        used.erase(number);
+        q.push(number);
+    }
+    
+private:
+    int mx;
+    queue<int> q;
+    unordered_set<int> used;
+};
+
+// Source : https://leetcode.com/problems/insert-delete-getrandom-o1/description/
+
+#include <iostream>
+#include <vector>
+#include <unordered_map>
+
+using namespace std;
+
+class RandomizedSet {
+
+private:
+    vector<int> nums;
+    unordered_map<int, int> index;
+
+public:
+    /** Initialize your data structure here. */
+    RandomizedSet() {
+        nums.clear();
+        index.clear();
+    }
+
+    /** Inserts a value to the set. Returns true if the set did not already contain the specified element. */
+    bool insert(int val) {
+        if(index.find(val) == index.end()){
+            nums.push_back(val);
+            index[val] = nums.size() - 1;
+            return true;
+        }
+        return false;
+    }
+
+    /** Removes a value from the set. Returns true if the set contained the specified element. */
+    bool remove(int val) {
+        if(index.find(val) != index.end()){
+            int i = index[val];
+            index.erase(val);
+
+            int num = nums.back();
+            nums.pop_back();
+
+            if(num != val){
+                nums[i] = num;
+                index[num] = i;
+            }
+
+            return true;
+        }
+        return false;
+    }
+
+    /** Get a random element from the set. */
+    int getRandom() {
+        int rndIndex = rand() % nums.size();
+        return nums[rndIndex];
+    }
+
+    void printInfo(){
+        cout << "nums : ";
+        for(int num: nums)
+            cout << num << " ";
+        cout << endl;
+
+        cout << "index : ";
+        for(const pair<int, int>& p: index)
+            cout << "( " << p.first << " , " << p.second << " ) ";
+        cout << endl;
+    }
+};
+
+
+void print_bool(bool res){
+    cout << (res ? "True" : "False") << endl;
+}
+
+int main() {
+
+    RandomizedSet randomSet;
+    print_bool(randomSet.insert(0));
+    randomSet.printInfo();
+    print_bool(randomSet.remove(0));
+    randomSet.printInfo();
+    print_bool(randomSet.insert(-1));
+    randomSet.printInfo();
+    print_bool(randomSet.remove(0));
+    randomSet.printInfo();
+
+    for(int i = 0 ; i < 10 ; i ++)
+        cout << randomSet.getRandom() << " ";
+    cout << endl;
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/insert-delete-getrandom-o1-duplicates-allowed/description/
+
+#include <iostream>
+#include <vector>
+#include <unordered_map>
+#include <unordered_set>
+
+using namespace std;
+
+class RandomizedCollection {
+
+private:
+    vector<int> nums;
+    unordered_map<int, unordered_set<int>> indexes;
+
+public:
+    /** Initialize your data structure here. */
+    RandomizedCollection() {
+        nums.clear();
+        indexes.clear();
+    }
+
+    /** Inserts a value to the collection. Returns true if the collection did not already contain the specified element. */
+    bool insert(int val) {
+        nums.push_back(val);
+        indexes[val].insert(nums.size() - 1);
+
+        return indexes[val].size() == 1;
+    }
+
+    /** Removes a value from the collection. Returns true if the collection contained the specified element. */
+    bool remove(int val) {
+        if(indexes.find(val) != indexes.end()){
+            int i = *indexes[val].begin();
+            indexes[val].erase(i);
+            if(indexes[val].size() == 0)
+                indexes.erase(val);
+
+            int num = nums.back();
+            nums.pop_back();
+            if(!(num == val && nums.size() == i)){
+
+                nums[i] = num;
+                indexes[num].erase(nums.size());
+                indexes[num].insert(i);
+            }
+
+            return true;
+        }
+        return false;
+    }
+
+    /** Get a random element from the collection. */
+    int getRandom() {
+        int rndIndex = rand() % nums.size();
+        return nums[rndIndex];
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+
+// Source : https://leetcode.com/problems/linked-list-random-node/description/
+
+#include <iostream>
+
+using namespace std;
+
+struct ListNode {
+    int val;
+    ListNode *next;
+    ListNode(int x) : val(x), next(NULL) {}
+};
+
+class Solution {
+
+private:
+    ListNode* head;
+
+public:
+    /** @param head The linked list's head.
+        Note that the head is guaranteed to be not null, so it contains at least one node. */
+    Solution(ListNode* head) {
+        this->head = head;
+    }
+
+    /** Returns a random node's value. */
+    int getRandom() {
+
+        int res = head->val;
+        ListNode* cur = head->next;
+        int index = 1;
+
+        // srand(time(NULL));
+        while(cur != NULL){
+            int rnd = rand() % (index + 1);
+            if(rnd == 0)
+                res = cur->val;
+
+            cur = cur->next;
+            index ++;
+        }
+
+        return res;
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/ransom-note/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    bool canConstruct(string ransomNote, string magazine) {
+
+        vector<int> f1(26, 0);
+        for(char c: ransomNote) f1[c - 'a'] ++;
+
+        vector<int> f2(26, 0);
+        for(char c: magazine) f2[c - 'a'] ++;
+
+        for(int i = 0; i < 26; i ++)
+            if(f1[i] > f2[i]) return false;
+        return true;
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/shuffle-an-array/
+
+class Solution {
+public:
+    Solution(vector<int> nums): v(nums) {}
+    
+    /** Resets the array to its original configuration and return it. */
+    vector<int> reset() {
+        return v;
+    }
+    
+    /** Returns a random shuffling of the array. */
+    vector<int> shuffle() {
+        vector<int> res = v;
+        for (int i = 0; i < res.size(); ++i) {
+            int t = i + rand() % (res.size() - i);
+            swap(res[i], res[t]);
+        }
+        return res;
+    }
+    
+private:
+    vector<int> v;
+};
+
+// Source : https://leetcode.com/problems/mini-parser/
+
+class Solution {
+public:
+    NestedInteger deserialize(string s) {
+        istringstream in(s);
+        return deserialize(in);
+    }
+    NestedInteger deserialize(istringstream& in) {
+        int num;
+        if (in >> num) return NestedInteger(num);
+        in.clear();
+        in.get();
+        NestedInteger list;
+        while (in.peek() != ']') {
+            list.add(deserialize(in));
+            if (in.peek() == ',') {
+                in.get();
+            }
+        }
+        in.get();
+        return list;
+    }
+};
+
+// Source : https://leetcode.com/problems/lexicographical-numbers/
+
+class Solution {
+public:
+    vector<int> lexicalOrder(int n) {
+        vector<int> res(n);
+        int cur = 1;
+        for (int i = 0; i < n; ++i) {
+            res[i] = cur;
+            if (cur * 10 <= n) {
+                cur *= 10;
+            } else {
+                if (cur >= n) cur /= 10;
+                cur += 1;
+                while (cur % 10 == 0) cur /= 10;
+            }
+        }
+        return res;
+    }
+};
+
+// Source : https://leetcode.com/problems/first-unique-character-in-a-string/description/
+
+#include <iostream>
+
+using namespace std;
+
+class Solution {
+
+public:
+    int firstUniqChar(string s) {
+        int freq[26] = {0};
+        for(char c: s)
+            freq[c-'a'] ++;
+
+        for(int i = 0 ; i < s.size() ; i ++)
+            if(freq[s[i]-'a'] == 1)
+                return i;
+
+        return -1;
+    }
+};
+
+
+int main() {
+
+    cout << Solution().firstUniqChar("leetcode") << endl;
+    cout << Solution().firstUniqChar("loveleetcode") << endl;
+    return 0;
+}
+
+https://leetcode.com/problems/longest-absolute-file-path/
+
+class Solution {
+public:
+    int lengthLongestPath(string input) {
+        int res = 0;
+        istringstream ss(input);
+        unordered_map<int, int> m{{0, 0}};
+        string line = "";
+        while (getline(ss, line)) {
+            int level = line.find_last_of('\t') + 1;
+            int len = line.substr(level).size();
+            if (line.find('.') != string::npos) {
+                res = max(res, m[level] + len);
+            } else {
+                m[level + 1] = m[level] + len + 1;
+            }
+        }
+        return res;
+    }
+};
+
+// Source : https://leetcode.com/problems/find-the-difference/description/
+
+#include <iostream>
+#include <string>
+#include <cassert>
+using namespace std;
+
+class Solution {
+public:
+    char findTheDifference(string s, string t) {
+
+        if(s.size() == 0){
+            assert(t.size() == 1);
+            return t[0];
+        }
+
+        char res = s[0];
+        for(int i = 1 ; i < s.size() ; i ++)
+            res ^= s[i];
+        for(int i = 0 ; i < t.size() ; i ++)
+            res ^= t[i];
+
+        return res;
+    }
+};
+
+int main() {
+
+    string s = "abcd";
+    string t = "abcde";
+    cout << Solution().findTheDifference(s, t) << endl;
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/elimination-game/description/
+
+#include <iostream>
+
+using namespace std;
+
+class Solution {
+public:
+    int lastRemaining(int n) {
+
+        if(n == 1)
+            return 1;
+
+        return 2 * (1 + n/2 - lastRemaining(n/2));
+    }
+};
+
+int main() {
+
+    cout << Solution().lastRemaining(9) << endl;
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/perfect-rectangle/description/
+
+#include <iostream>
+#include <vector>
+#include <cassert>
+#include <map>
+
+using namespace std;
+
+class Solution {
+public:
+    bool isRectangleCover(vector<vector<int>>& rectangles) {
+
+        int area = 0;
+        int minx = INT_MAX, miny = INT_MAX;
+        int maxx = 0, maxy = 0;
+
+        map<pair<int,int>, int> corners;
+
+        for(vector<int> rectangle: rectangles){
+            assert(rectangle.size() == 4);
+            minx = min(minx, rectangle[0]);
+            miny = min(miny, rectangle[1]);
+            maxx = max(maxx, rectangle[2]);
+            maxy = max(maxy, rectangle[3]);
+            area += (rectangle[2] - rectangle[0]) * (rectangle[3] - rectangle[1]);
+
+            add_corner(corners, rectangle[0], rectangle[1]);
+            add_corner(corners, rectangle[0], rectangle[3]);
+            add_corner(corners, rectangle[2], rectangle[1]);
+            add_corner(corners, rectangle[2], rectangle[3]);
+        }
+
+        if(area == (maxx - minx) * (maxy - miny))
+            return make_sense(corners, make_pair(minx, miny), make_pair(maxx, maxy));
+
+        return false;
+    }
+
+private:
+    void add_corner(map<pair<int,int>, int>& corners, int x, int y){
+        pair<int, int> corner = make_pair(x, y);
+        if(corners.find(corner) == corners.end())
+            corners[corner] = 1;
+        else
+            corners[corner] ++;
+    }
+
+    bool make_sense(map<pair<int,int>, int>& corners,
+                    const pair<int, int>& leftBottom, const pair<int, int>& rightTop){
+
+        if(corners[leftBottom] != 1)
+            return false;
+        corners.erase(leftBottom);
+
+        if(corners[rightTop] != 1)
+            return false;
+        corners.erase(rightTop);
+
+        pair<int, int> leftTop = make_pair(leftBottom.first, rightTop.second);
+        if(corners[leftTop] != 1)
+            return false;
+        corners.erase(leftTop);
+
+        pair<int, int> rightBottom = make_pair(rightTop.first, leftBottom.second);
+        if(corners[rightBottom] != 1)
+            return false;
+        corners.erase(rightBottom);
+
+        for(map<pair<int,int>, int>::iterator iter = corners.begin();
+                iter != corners.end(); iter ++){
+            if(iter->second % 2)
+                return false;
+        }
+
+        return true;
+    }
+};
+
+
+void printBool(bool res){
+    cout << (res ? "true" : "false") << endl;
+}
+
+int main() {
+
+    int n1 = 5;
+    int rectangles1[5][4] = {
+            {1, 1, 3, 3},
+            {3, 1, 4, 2},
+            {3, 2, 4, 4},
+            {1, 3, 2, 4},
+            {2, 3, 3, 4}
+    };
+    vector<vector<int>> vec1;
+    for(int i = 0 ; i < n1 ; i ++)
+        vec1.push_back(vector<int>(rectangles1[i], rectangles1[i] + 4));
+    printBool(Solution().isRectangleCover(vec1));
+    // true
+
+    // ---
+
+    int n2 = 4;
+    int rectangles2[4][4] = {
+            {1,1,2,3},
+            {1,3,2,4},
+            {3,1,4,2},
+            {3,2,4,4}
+    };
+    vector<vector<int>> vec2;
+    for(int i = 0 ; i < n2 ; i ++)
+        vec2.push_back(vector<int>(rectangles2[i], rectangles2[i] + 4));
+    printBool(Solution().isRectangleCover(vec2));
+    // false
+
+    // ---
+
+    int n3 = 4;
+    int rectangles3[4][4] = {
+            {1,1,3,3},
+            {3,1,4,2},
+            {1,3,2,4},
+            {3,2,4,4}
+    };
+    vector<vector<int>> vec3;
+    for(int i = 0 ; i < n3 ; i ++)
+        vec3.push_back(vector<int>(rectangles3[i], rectangles3[i] + 4));
+    printBool(Solution().isRectangleCover(vec3));
+    // false
+
+    // ---
+
+    int n4 = 12;
+    int rectangles4[12][4] = {
+            {0,0,4,1},
+            {7,0,8,2},
+            {6,2,8,3},
+            {5,1,6,3},
+            {4,0,5,1},
+            {6,0,7,2},
+            {4,2,5,3},
+            {2,1,4,3},
+            {0,1,2,2},
+            {0,2,2,3},
+            {4,1,5,2},
+            {5,0,6,1}
+    };
+    vector<vector<int>> vec4;
+    for(int i = 0 ; i < n4 ; i ++)
+        vec4.push_back(vector<int>(rectangles4[i], rectangles4[i] + 4));
+    printBool(Solution().isRectangleCover(vec4));
+    // true
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/is-subsequence/
+
+#include <iostream>
+
+using namespace std;
+
+class Solution {
+public:
+    bool isSubsequence(string s, string t) {
+
+        int index = -1;
+        for(char c: s){
+            index = t.find(c, index + 1);
+            if(index == string::npos) return false;
+        }
+        return true;
+    }
+};
+
+
+int main() {
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/utf-8-validation/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    bool validUtf8(vector<int>& data) {
+
+        for(int i = 0; i < data.size(); ){
+            int byte = data[i] & 0b11111111;
+            if(!(byte & 0b10000000))
+                i ++;
+            else if((byte & 0b11000000) == 0b11000000 && !(byte & 0b00100000)){
+                if(i + 1 >= data.size())
+                    return false;
+                if(!is10(data[i + 1]))
+                    return false;
+                i += 2;
+            }
+            else if((byte & 0b11100000) == 0b11100000 && !(byte & 0b00010000)){
+                if(i + 2 >= data.size())
+                    return false;
+                for(int j = 1; j <= 2; j ++)
+                    if(!is10(data[i + j]))
+                        return false;
+                i += 3;
+            }
+            else if((byte & 0b11110000) == 0b11110000 && !(byte & 0b00001000)){
+                if(i + 3 >= data.size())
+                    return false;
+                for(int j = 1; j <= 3; j ++)
+                    if(!is10(data[i + j]))
+                        return false;
+                i += 4;
+            }
+            else
+                return false;
+        }
+
+        return true;
+    }
+
+private:
+    bool is10(int byte){
+        return (byte & 0b10000000) && !(byte & 0b01000000);
+    }
+};
+
+
+int main() {
+
+    vector<int> data1 = {197, 130, 1};
+    // 11000101 10000010 00000001
+    cout << Solution().validUtf8(data1) << endl;
+    // true
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/decode-string/description/
+
+#include <iostream>
+#include <cassert>
+
+using namespace std;
+
+class Solution {
+public:
+    string decodeString(string s) {
+        int end;
+        return dfs(s, 0, end);
+    }
+
+private:
+    string dfs(const string& s, int start, int& end){
+
+        string res = "";
+        for(int i = start; i < s.size();)
+            if(isalpha(s[i]))
+                res += s[i++];
+            else if(isdigit(s[i])){
+                int j;
+                for(j = i + 1; j < s.size() && isdigit(s[j]); j ++);
+                int num = atoi(s.substr(i, j - i).c_str());
+                assert(s[j] == '[');
+
+                int e;
+                string sub = dfs(s, j + 1, e);
+                while(num --)
+                    res += sub;
+
+                assert(s[e] == ']');
+                i = e + 1;
+            }
+            else{
+                assert(s[i] == ']');
+                end = i;
+                return res;
+            }
+
+        end = s.size();
+        return res;
+    }
+};
+
+
+int main() {
+
+    string s1 = "3[a]2[bc]";
+    cout << Solution().decodeString(s1) << endl;
+    // "aaabcbc"
+
+    string s2 = "3[a2[c]]";
+    cout << Solution().decodeString(s2) << endl;
+    // "accaccacc"
+
+    string s3 = "2[abc]3[cd]ef";
+    cout << Solution().decodeString(s3) << endl;
+    // "abcabccdcdcdef"
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/longest-substring-with-at-least-k-repeating-characters/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    int longestSubstring(string s, int k) {
+
+        int n = s.size();
+        vector<vector<int>> presum(26, vector<int>(n + 1, 0));
+        for(int i = 0; i < n; i ++)
+            for(int c = 0; c < 26; c ++)
+                presum[c][i + 1] = presum[c][i] + (s[i] == 'a' + c);
+
+        return solve(s, k, 0, n - 1, presum);
+    }
+
+private:
+    int solve(const string& s, int k, int l, int r, const vector<vector<int>>& presum){
+
+        if(l > r || r - l + 1 < k) return 0;
+
+        int breakchar = -1;
+        for(int c = 0; c < 26; c ++)
+            if((presum[c][r + 1] - presum[c][l]) && presum[c][r + 1] - presum[c][l] < k){
+                breakchar = c;
+                break;
+            }
+
+        if(breakchar == -1) return r - l + 1;
+
+        int pos = -1;
+        for(int i = l; i <= r; i ++)
+            if(s[i] == 'a' + breakchar){
+                pos = i;
+                break;
+            }
+        return max(solve(s, k, l, pos - 1, presum), solve(s, k, pos + 1, r, presum));
+    }
+};
+
+
+int main() {
+
+    cout << Solution().longestSubstring("aaabb", 3) << endl;
+    // 3
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/rotate-function/
+
+//假设4个整数分别为A,B,C,D，那么我们可以得到：
+//F(0) = 0A + 1B + 2C +3D
+//F(1) = 0D + 1A + 2B +3C
+//F(2) = 0C + 1D + 2A +3B
+//F(3) = 0B + 1C + 2D +3A
+//仔细观察，可以得出下面的规律：
+//sum = 1A + 1B + 1C + 1D
+//F(1) = F(0) + sum - 4D
+//F(2) = F(1) + sum - 4C
+//F(3) = F(2) + sum - 4B
+//F(i) = F(i-1) + sum - n*A[n-i]
+
+class Solution {
+public:
+    int maxRotateFunction(vector<int>& A) {
+        int t = 0, sum = 0, n = A.size();
+        for (int i = 0; i < n; ++i) {
+            sum += A[i];
+            t += i * A[i];
+        }
+        int res = t;
+        for (int i = 1; i < n; ++i) {
+            t = t + sum - n * A[n - i];
+            res = max(res, t);
+        }
+        return res;
+    }
+};
+
+// Source : https://leetcode.com/problems/integer-replacement/
+
+class Solution {
+public:
+    int integerReplacement(int n) {
+        if (n == 1) return 0;
+        if (n % 2 == 0) return 1 + integerReplacement(n / 2);
+        else {
+            long long t = n;
+            return 2 + min(integerReplacement((t + 1) / 2), integerReplacement((t - 1) / 2));
+        }
+    }
+};
+
+// Source : https://leetcode.com/problems/random-pick-index/
+
+class Solution {
+public:
+    Solution(vector<int> nums): v(nums) {}
+    
+    int pick(int target) {
+        int cnt = 0, res = -1;
+        for (int i = 0; i < v.size(); ++i) {
+            if (v[i] != target) continue;
+            ++cnt;
+            if (rand() % cnt == 0) res = i;
+        }
+        return res;
+    }
+private:
+    vector<int> v;
+};
+
+// Source : https://leetcode.com/problems/evaluate-division/
+
+#include <iostream>
+#include <vector>
+#include <unordered_map>
+#include <unordered_set>
+
+using namespace std;
+
+class Solution {
+public:
+    vector<double> calcEquation(vector<vector<string>>& equations,
+                                vector<double>& values,
+                                vector<vector<string>>& queries) {
+
+        unordered_map<string, unordered_map<string, double>> g;
+        for(int i = 0; i < values.size(); i ++)
+            g[equations[i][0]][equations[i][1]] = values[i],
+            g[equations[i][1]][equations[i][0]] = 1.0 / values[i];
+
+        vector<double> res;
+        for(const vector<string>& q: queries){
+            unordered_set<string> visited;
+            res.push_back(dfs(g, q[0], q[1], visited));
+        }
+        return res;
+    }
+
+private:
+    double dfs(const unordered_map<string, unordered_map<string, double>>& g,
+               const string& s, const string& t, unordered_set<string>& visited){
+
+        if(!g.count(s)) return -1.0;
+        if(s == t) return 1.0;
+
+        visited.insert(s);
+        for(const pair<string, double>& p: g.at(s))
+            if(!visited.count(p.first)){
+                double tres = dfs(g, p.first, t, visited);
+                if(tres >= 0.0) return tres * p.second;
+            }
+        return -1.0;
+    }
+};
+
+
+void print_vec(const vector<double>& res){
+    for(double e: res) cout << e << " "; cout << endl;
+}
+
+int main() {
+
+    vector<vector<string>> equations1 = {{"a","b"},{"b","c"}};
+    vector<double> values1 = {2.0, 3.0};
+    vector<vector<string>> queries1 = {{"a","c"},{"b","a"},{"a","e"},{"a","a"},{"x","x"}};
+    print_vec(Solution().calcEquation(equations1, values1, queries1));
+    // 6.00000,0.50000,-1.00000,1.00000,-1.00000
+
+    vector<vector<string>> equations2 = {{"a","b"},{"b","c"},{"a","c"}};
+    vector<double> values2 = {2.0, 3.0, 6.0};
+    vector<vector<string>> queries2 = {{"a","c"},{"b","a"},{"a","e"},{"a","a"},{"x","x"}};
+    print_vec(Solution().calcEquation(equations2, values2, queries2));
+    // 6.00000,0.50000,-1.00000,1.00000,-1.00000
+
+    return 0;
+}
+
+// Source : https://leetcode.com/problems/nth-digit/
+
+class Solution {
+public:
+    int findNthDigit(int n) {
+        long long len = 1, cnt = 9, start = 1;
+        while (n > len * cnt) {
+            n -= len * cnt;
+            ++len;
+            cnt *= 10;
+            start *= 10;
+        }
+        start += (n - 1) / len;
+        string t = to_string(start);
+        return t[(n - 1) % len] - '0';
+    }
+};
